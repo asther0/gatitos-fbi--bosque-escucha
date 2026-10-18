@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   ArrowUpRight,
@@ -23,6 +23,7 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
+import { publicDemo } from "@/lib/public-demo";
 import { OperationsSettings } from "@/components/OperationsSettings";
 import { NotificationReceipt } from "@/components/NotificationReceipt";
 import ForestMap from "@/components/ForestMap";
@@ -58,20 +59,26 @@ export default function Home() {
     [assignee, setAssignee] = useState(""),
     [filter, setFilter] = useState("all"),
     [date, setDate] = useState("");
+  const demoState = useRef<Dashboard | null>(null);
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/dashboard", { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw Error(body.error || "No se pudo sincronizar");
-      setData(body);
+      if (body.authenticated) {
+        setData(body);
+      } else {
+        demoState.current ??= publicDemo();
+        setData(demoState.current);
+      }
       if (typeof body.authenticated === "boolean")
         setAuthenticated(body.authenticated);
       setError(body.error || "");
       setSynced(new Date().toISOString());
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo conectar al centro",
-      );
+      demoState.current ??= publicDemo();
+      setData((current) => current?.authenticated ? current : demoState.current);
+      setError(err instanceof Error ? err.message : "No se pudo conectar al centro");
     }
   }, []);
   useEffect(() => {
@@ -84,6 +91,28 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [refresh]);
   const mutate = async (url: string, body: unknown, method = "POST") => {
+    if (!authenticated) {
+      const payload = body as Record<string, string>;
+      const current = demoState.current ?? publicDemo();
+      if (url === "/api/demo") {
+        demoState.current = publicDemo(payload.scenario);
+        setSelected(null);
+        setTab("Panorama");
+      } else if (url.startsWith("/api/incidents/")) {
+        const id = url.split("/")[3];
+        const now = new Date().toISOString();
+        const notification = url.endsWith("/notify");
+        demoState.current = {
+          ...current,
+          incidents: current.incidents.map(i => i.id === id && !notification ? { ...i, ...payload, updated_at: now } as Incident : i),
+          audit: [{ id: crypto.randomUUID(), incident_id: id, action: notification ? "DEMO · Aprobación de notificación simulada" : `DEMO · ${payload.status ? statuses[payload.status] : "Prioridad actualizada"}`, actor: "Visitante de la demo", details: payload, created_at: now }, ...current.audit],
+          notifications: notification && !current.notifications.some(n => n.incident_id === id) ? [{ id: crypto.randomUUID(), incident_id: id, channel: "DEMO · Sin envío externo", status: "blocked", approved_by: "Visitante", created_at: now, sent_at: null, last_error: "Simulación: no se envían mensajes reales." }, ...current.notifications] : current.notifications,
+        };
+      } else return false;
+      setData(demoState.current);
+      setMessage("Cambio simulado en este navegador. No modifica operaciones reales.");
+      return true;
+    }
     setBusy(true);
     setMessage("");
     try {
@@ -230,7 +259,7 @@ export default function Home() {
             <span>
               <strong>{authenticated ? "Operador" : "Vista pública"}</strong>
               <small>
-                {authenticated ? "Cerrar sesión" : "Ingresar al centro"}
+                {authenticated ? "Cerrar sesión" : "Acceso del equipo"}
               </small>
             </span>
             <ChevronRight size={16} />
@@ -249,7 +278,7 @@ export default function Home() {
               {error
                 ? "Sin sincronización"
                 : synced
-                  ? "Nube sincronizada"
+                  ? authenticated ? "Nube sincronizada" : "Demo en tu navegador"
                   : "Conectando"}
             </span>
             <span className="header-divider" />
@@ -291,26 +320,25 @@ export default function Home() {
             <button
               className="button primary"
               onClick={() =>
-                authenticated ? setTab("Ajustes") : setLogin(true)
+                setTab("Ajustes")
               }
             >
               {authenticated ? (
                 <SlidersHorizontal size={15} />
               ) : (
-                <Lock size={15} />
+                <AudioLines size={15} />
               )}{" "}
-              {authenticated ? "Herramientas demo" : "Acceso operador"}
+              {authenticated ? "Herramientas demo" : "Probar escenarios"}
             </button>
           </div>
           {!authenticated && (
             <div className="public-banner">
               <span>
                 <Eye size={15} />
-                <strong>Vista de demostración</strong> Datos sintéticos
-                identificados como DEMO. Ingresa para revisar datos operativos.
+                <strong>Demo interactiva sin registro</strong> Revisa un incidente, toma una decisión y simula una notificación. Datos y scores sintéticos; cambios solo en este navegador.
               </span>
-              <button onClick={() => setLogin(true)}>
-                Ingresar <ArrowUpRight size={13} />
+              <button onClick={() => { void mutate("/api/demo", { scenario: "combined" }); setSelected("demo-incident"); }}>
+                Probar el flujo <ArrowUpRight size={13} />
               </button>
             </div>
           )}
@@ -729,9 +757,7 @@ export default function Home() {
                           disabled={busy}
                           key={s.id}
                           onClick={() =>
-                            authenticated
-                              ? void mutate("/api/demo", { scenario: s.id })
-                              : setLogin(true)
+                            void mutate("/api/demo", { scenario: s.id })
                           }
                         >
                           <span>
@@ -749,7 +775,7 @@ export default function Home() {
                   </section>
                 </div>
               )}
-              {tab === "Ajustes" && (
+              {tab === "Ajustes" && authenticated && (
                 <OperationsSettings
                   authenticated={authenticated}
                   onLogin={() => setLogin(true)}
@@ -836,8 +862,9 @@ export default function Home() {
                   Asignado a: <strong>{selectedIncident.assigned_to}</strong>
                 </p>
               )}
-              {authenticated ? (
+              {(authenticated || data?.mode === "demo") ? (
                 <>
+                  {!authenticated && <p className="notice-banner">Prueba libre · Las decisiones son simuladas y se reinician al recargar. No hay capturas reales en este escenario.</p>}
                   <label>
                     Nota de revisión
                     <textarea
@@ -930,14 +957,13 @@ export default function Home() {
                             )
                           }
                         >
-                          Aprobar notificación
+                          {authenticated ? "Aprobar notificación" : "Simular aprobación"}
                         </button>
                       </>
                     )}
                   </div>
                   <p className="tiny muted">
-                    La aprobación registra la solicitud de envío. Consulta su
-                    estado en Actividad.
+                    {authenticated ? "La aprobación registra la solicitud de envío. Consulta su estado en Actividad." : "La demo registra la aprobación en Actividad; no envía mensajes a nadie."}
                   </p>
                 </>
               ) : (

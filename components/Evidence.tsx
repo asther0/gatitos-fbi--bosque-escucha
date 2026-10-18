@@ -102,12 +102,12 @@ export function Evidence({
           <span>
             {url
               ? "Evidencia restringida a operadores"
-              : "Sin archivo de evidencia adjunto"}
+              : event.source === "demo" ? "Escenario sintético · Sin captura real adjunta" : "Sin archivo de evidencia adjunto"}
           </span>
         </div>
       )}
       <small className="tiny muted">
-        El score es una salida del modelo, no una probabilidad calibrada.
+        {event.source === "demo" ? "Score ilustrativo para explorar el flujo; no procede de una inferencia real." : "El score es una salida del modelo, no una probabilidad calibrada."}
       </small>
     </article>
   );
