@@ -12,3 +12,4 @@ tmp/
 .vercel
 .local/
 local-center/models/
+supabase/.temp/

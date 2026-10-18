@@ -25,7 +25,7 @@ function priorityLabel(priority: string): string {
   }
 }
 
-export function formatKapsoAlert(incident: AlertIncident, contact: AlertContact): string {
+export function formatKapsoAlert(incident: AlertIncident, contact: AlertContact, demo = false): string {
   const recorded = new Date(incident.created_at);
   const date = Number.isNaN(recorded.getTime())
     ? null
@@ -37,7 +37,7 @@ export function formatKapsoAlert(incident: AlertIncident, contact: AlertContact)
 
   return [
     '🌿 *BOSQUE ESCUCHA*',
-    '*ALERTA REVISADA*',
+    demo ? '*SIMULACRO · NO ES UNA ALERTA REAL*' : '*ALERTA REVISADA*',
     '',
     `*Prioridad:* ${priorityLabel(incident.priority)}`,
     `*Indicio:* ${plainLine(incident.title, 180)}`,
@@ -46,8 +46,8 @@ export function formatKapsoAlert(incident: AlertIncident, contact: AlertContact)
     ...(date ? [`*Registro:* ${date} (Perú)`] : []),
     `*Caso:* ${plainLine(incident.id.slice(0, 8).toUpperCase(), 8)}`,
     '',
-    '*Siguiente paso*',
-    'Revisa la evidencia disponible en el centro de comando antes de intervenir.',
-    '_El indicio no confirma actividad ilegal._',
+    ...(demo
+      ? ['*Prueba de integración*', 'Audio captado por un ESP32 de demostración. No requiere intervención.']
+      : ['*Siguiente paso*', 'Revisa la evidencia disponible en el centro de comando antes de intervenir.', '_El indicio no confirma actividad ilegal._']),
   ].join('\n');
 }

@@ -115,7 +115,10 @@ async def process_jobs():
                             continue
                 target=os.getenv('CLOUD_BASE_URL','').rstrip('/')+'/api/sync' if job['kind']=='sync' else os.getenv('N8N_NOTIFY_WEBHOOK','')
                 if not target or target=='/api/sync':continue
-                if job['attempts']>=8:continue
+                # A disconnected demo can last longer than eight attempts. Keep the
+                # cloud snapshot pending until connectivity returns; only outbound
+                # notification jobs have a finite retry budget.
+                if job['kind']=='notify' and job['attempts']>=8:continue
                 try:
                     if job['kind']=='sync':
                         with connect() as c: payload={t:rows(c,t) for t in ('nodes','events','incidents','audit','notifications')}
@@ -180,7 +183,8 @@ async def process_jobs():
                 except Exception as exc:
                     with connect() as c:
                         attempt=job['attempts']+1
-                        c.execute('UPDATE jobs SET attempts=?,next_at=?,error=? WHERE id=? AND body=?',(attempt,time.time()+min(300,2**attempt),type(exc).__name__,job['id'],job['body']))
+                        retry_delay=min(15 if job['kind']=='sync' else 300,2**attempt)
+                        c.execute('UPDATE jobs SET attempts=?,next_at=?,error=? WHERE id=? AND body=?',(attempt,time.time()+retry_delay,type(exc).__name__,job['id'],job['body']))
                         if job['kind']=='notify':
                             n=get(c,'notifications',job['id']);n.update(attempts=attempt,last_error=type(exc).__name__,status='failed' if attempt>=8 else 'queued');put(c,'notifications',n)
         except Exception:

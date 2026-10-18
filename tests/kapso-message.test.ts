@@ -20,3 +20,17 @@ test('WhatsApp alert stays readable when an incident title contains line breaks 
   assert.match(message, /\*Caso:\* F6292129/);
   assert.match(message, /\*Siguiente paso\*\nRevisa la evidencia disponible/);
 });
+
+test('physical microphone demo is unmistakably a simulacro', () => {
+  const message = formatKapsoAlert({
+    id: '7694fbeb-fcd3-45ef-ae74-ee97a30c6438',
+    title: 'Motosierra detectada',
+    priority: 'observation',
+    node_id: 'DEMO-ESP32-WIFI',
+    created_at: '2026-10-18T14:58:58.000Z',
+  }, { sector: 'SIMULACRO' }, true);
+
+  assert.match(message, /\*SIMULACRO · NO ES UNA ALERTA REAL\*/);
+  assert.match(message, /No requiere intervención\./);
+  assert.doesNotMatch(message, /\*ALERTA REVISADA\*/);
+});

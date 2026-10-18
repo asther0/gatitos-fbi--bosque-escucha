@@ -60,13 +60,18 @@ export default function Home() {
     [filter, setFilter] = useState("all"),
     [date, setDate] = useState("");
   const [includeTests, setIncludeTests] = useState(false);
+  const [syncedTestCount, setSyncedTestCount] = useState(0);
   const demoState = useRef<Dashboard | null>(null);
+  useEffect(() => {
+    setIncludeTests(window.localStorage.getItem("bosque.includeTests") === "true");
+  }, []);
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/dashboard", { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw Error(body.error || "No se pudo sincronizar");
       if (body.authenticated) {
+        setSyncedTestCount(body.incidents.filter((i: Incident) => i.node_id === "DEMO-ESP32-WIFI").length);
         if (includeTests) setData(body);
         else {
           const testNode = (id: string) => id.startsWith("DEMO") || id === "CHECK-LOCAL";
@@ -155,6 +160,9 @@ export default function Home() {
     (i) => !["closed", "discarded"].includes(i.status),
   );
   const selectedIncident = data?.incidents.find((i) => i.id === selected);
+  const selectedNotification = data?.notifications.find(
+    (n) => n.incident_id === selectedIncident?.id,
+  );
   const alerts = useMemo(() => {
     const result: Record<string, string> = {};
     data?.incidents
@@ -194,6 +202,14 @@ export default function Home() {
     data?.events.some(
       (e) => incident.event_ids.includes(e.id) && e.source === "demo",
     );
+  const isPhysicalTest = (incident: Incident) =>
+    incident.node_id === "DEMO-ESP32-WIFI";
+  const toggleTests = () => {
+    setIncludeTests((value) => {
+      window.localStorage.setItem("bosque.includeTests", String(!value));
+      return !value;
+    });
+  };
   const changeStatus = async (status: string) => {
     if (!selectedIncident) return;
     if (!note.trim()) {
@@ -368,7 +384,7 @@ export default function Home() {
               configurada.
             </div>
           )}
-          {data?.authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye simulaciones" : "Vista de operación"}</strong> · {includeTests ? "Los nodos DEMO y las pruebas están identificados como simulados." : "Activa la capa DEMO para representar otros puntos de escucha."}</span><button onClick={() => setIncludeTests(value => !value)}>{includeTests ? "Ocultar simulaciones" : "Ver simulaciones"}</button></div>}
+          {data?.authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye pruebas" : "Vista de operación"}</strong> · {includeTests ? "Las capturas del ESP32 y los módulos simulados están identificados." : syncedTestCount ? `${syncedTestCount} incidencia${syncedTestCount === 1 ? "" : "s"} del ESP32 sincronizada${syncedTestCount === 1 ? "" : "s"}. Abre las pruebas para revisarlas.` : "Activa la capa de pruebas para ver el ESP32 y los módulos simulados."}</span><button onClick={toggleTests}>{includeTests ? "Ocultar pruebas" : "Ver pruebas del ESP32"}</button></div>}
           {!data && !error && (
             <div className="loading">
               <RefreshCw className="spin" size={25} />
@@ -834,7 +850,7 @@ export default function Home() {
                 Prioridad {priorities[selectedIncident.priority]}
               </Badge>
               {isDemo(selectedIncident) && (
-                <Badge tone="amber">DEMO · Sintético</Badge>
+                <Badge tone="amber">{isPhysicalTest(selectedIncident) ? "DEMO · Captura del ESP32" : "DEMO · Sintético"}</Badge>
               )}
             </div>
             <h2>{selectedIncident.title}</h2>
@@ -958,24 +974,25 @@ export default function Home() {
                         >
                           Cerrar incidente
                         </button>
-                        <button
+                        {(!authenticated || !isDemo(selectedIncident) || isPhysicalTest(selectedIncident)) && !(authenticated && isPhysicalTest(selectedIncident) && selectedNotification) && <button
                           className="button notify-button"
                           disabled={busy}
                           onClick={() =>
                             void mutate(
-                              `/api/incidents/${selectedIncident.id}/notify`,
+                              `/api/incidents/${selectedIncident.id}/${authenticated && isPhysicalTest(selectedIncident) ? "demo-notify" : "notify"}`,
                               { approved: true },
                             )
                           }
                         >
-                          {authenticated ? "Difundir alerta por WhatsApp" : "Simular difusión"}
-                        </button>
+                          {authenticated ? isPhysicalTest(selectedIncident) ? "Enviar simulacro por WhatsApp" : "Difundir alerta por WhatsApp" : "Simular difusión"}
+                        </button>}
                       </>
                     )}
                   </div>
                   <p className="tiny muted">
-                    {authenticated ? "Requiere Internet. Al pulsar, se solicita el envío por n8n y Kapso; consulta el estado de entrega en Actividad." : "La vista pública solo simula la difusión; no envía mensajes."}
+                    {authenticated ? isPhysicalTest(selectedIncident) ? "El simulacro se envía al número de prueba autorizado cuando hay Internet. Consulta el resultado en Actividad." : isDemo(selectedIncident) ? "Los escenarios sintéticos no envían mensajes externos." : "Requiere Internet. Al pulsar, se solicita el envío por n8n y Kapso; consulta el estado de entrega en Actividad." : "La vista pública solo simula la difusión; no envía mensajes."}
                   </p>
+                  {selectedNotification && <div className="notice-banner" role="status"><span><strong>WhatsApp: {statuses[selectedNotification.status] || selectedNotification.status}</strong><br/><NotificationReceipt notification={selectedNotification} /></span></div>}
                 </>
               ) : (
                 <button

@@ -17,10 +17,13 @@ export async function POST(request: Request) {
     if (request.headers.get('idempotency-key') !== id)
       return Response.json({ error: 'Idempotency-Key inválida' }, { status: 400 });
     const db = database();
-    const claim = await db.rpc('be_reserve_kapso', { target: id });
+    const claim = await db.rpc('be_reserve_kapso_send', {
+      target: id,
+      expected_demo_destination: process.env.KAPSO_DEMO_RECIPIENT || null,
+    });
     check(claim.error);
     if (!claim.data) return Response.json({ accepted: false, status: 'blocked_or_already_reserved' });
-    const { incident, contact } = claim.data;
+    const { notification, incident, contact } = claim.data;
     let response: Response;
     try {
       response = await fetch(`https://api.kapso.ai/meta/whatsapp/v24.0/${phoneId}/messages`, {
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
           messaging_product: 'whatsapp',
           to: contact.destination.slice(1),
           type: 'text',
-          text: { body: formatKapsoAlert(incident, contact) },
+          text: { body: formatKapsoAlert(incident, contact, notification.approved_by === 'operator_demo') },
         }),
         signal: AbortSignal.timeout(15000),
       });
