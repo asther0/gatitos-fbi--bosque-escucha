@@ -73,3 +73,7 @@ JSON normal: máximo 64 KB; snapshots: 2 MB; metadata y detalles de auditoría: 
 Antes de subir evidencias de un nodo nuevo, enviar snapshot solo de nodos y demás arrays vacíos. Luego subir archivos y enviar el snapshot completo.
 
 La nube acepta revisiones locales sucesivas por updated_at mientras no haya revisión humana propia en nube. Cuando existe human_review del operador cloud, su decisión prevalece y requiere reconciliación operativa manual. Prioridades ajustadas en nube se conservan. Entrega y confirmación local pueden avanzar el registro cloud; snapshots antiguos nunca degradan sent/delivered ni borran confirmaciones.
+
+### Propietario del envío
+
+Los registros con `channel:whatsapp`/`sms` pertenecen al worker local; la nube solo despacha `channel:n8n`. Aprobar desde cloud devuelve la notificación existente del incidente, cualquiera sea el canal. Si hay una notificación local del incidente, cloud no despacha otra. No habilitar dos workers para el mismo ID. La respuesta de `/api/sync` incluye `notifications` con estados actuales cloud para que el centro local pueda reconciliar entrega y confirmación en el futuro.

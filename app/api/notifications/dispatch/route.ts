@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const pending = await database()
       .from("be_notifications")
       .select("id")
+      .eq("channel", "n8n")
       .in("status", ["queued", "failed", "blocked"])
       .lt("attempts", 5)
       .lte("next_attempt_at", new Date().toISOString())
