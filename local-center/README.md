@@ -67,7 +67,7 @@ Cada línea contiene un payload de evento JSON completo y UUID estable. El bridg
 
 Las dependencias de IA son pesadas y dependen de la versión Python/CPU. Se recomienda un entorno separado **Python 3.11** para TensorFlow; el entorno web puede usar otro Python. No se instalan modelos durante el arranque y nunca se simula una detección por ausencia de modelo.
 
-Audio: instalar `tensorflow`, `tensorflow-hub`, `soundfile`, `numpy`; descargar explícitamente YAMNet SavedModel y `yamnet_class_map.csv` desde TensorFlow Hub/documentación YAMNet. `AudioDetector` usa inferencia real CPU, exige WAV mono 16 kHz y evalúa Chainsaw / Walk, footsteps; umbral inicial 0.65 y 3 ventanas consecutivas para persistencia. Son parámetros iniciales pendientes de calibración, no resultados de precisión. El clip debe contener al menos 0.975 s. No compartir instancia entre nodos ni concatenar ventanas separadas por intervalos largos: la CLI crea un detector nuevo por archivo.
+Audio: instalar las dependencias fijadas en `requirements-ml.txt` y ejecutar `setup_models.py` para obtener YAMNet SavedModel y `yamnet_class_map.csv` oficiales. El loader usa `tensorflow.saved_model.load` directamente sobre archivos locales, sin depender de TensorFlow Hub en ejecución. `AudioDetector` usa inferencia real CPU, exige WAV mono 16 kHz y evalúa Chainsaw / Walk, footsteps; umbral inicial 0.65 y 3 ventanas consecutivas para persistencia. Son parámetros iniciales pendientes de calibración, no resultados de precisión. El clip debe contener al menos 0.975 s. No compartir instancia entre nodos ni concatenar ventanas separadas por intervalos largos: la CLI crea un detector nuevo por archivo.
 
 ```bash
 python analyze.py clip.wav --node A01 --kind audio --model /ruta/yamnet --class-map /ruta/yamnet_class_map.csv
@@ -133,3 +133,23 @@ Los modelos se cargan una vez por proceso y el análisis se ejecuta en un hilo p
 El sync registra primero los nodos en nube, sube los blobs después y finalmente sincroniza eventos/incidentes. La cache de upload está identificada por destino cloud, nodo y hash/ruta local. Los callbacks/cloud no dependen de que los archivos tengan una URL pública. Los límites del contrato se respetan con lotes ordenados por dependencias.
 
 No hay borrado automático de evidencia ni retención implícita. Antes del piloto, definir la retención con el equipo y una tarea explícita de limpieza; esta versión conserva los archivos para no eliminar evidencia pendiente de revisión o sincronización.
+
+## Instalar y verificar IA offline reproducible
+
+Usar Python **3.11** y dependencias fijadas:
+
+```bash
+python3.11 -m venv .venv-ml
+.venv-ml/bin/pip install -r requirements-ml.txt
+.venv-ml/bin/python setup_models.py
+.venv-ml/bin/python smoke_models.py
+```
+
+`setup_models.py` descarga explícitamente YOLO11n (~5.6 MB) desde la release oficial de Ultralytics y pesos YAMNet (~15.3 MB) del bucket oficial TensorFlow AudioSet. Dado que la URL comprimida TFHub/Kaggle devolvió 404 durante la instalación, usa la arquitectura oficial TensorFlow fijada a un commit y exporta SavedModel compatible localmente. El código upstream requiere Keras 2 (`tf-keras`), separado de Keras 3. `models/provenance.json` registra URLs y SHA256; todos los assets descargados y exportados están ignorados en Git. Cada descarga está limitada a 64 MB (esto no incluye los wheels del entorno).
+
+Fuentes primarias: [tutorial YAMNet](https://www.tensorflow.org/hub/tutorials/yamnet), [código y pesos oficiales TensorFlow](https://github.com/tensorflow/models/tree/34a21326906b9574fa11c4d6d0a5c534ff039267/research/audioset/yamnet), [documentación YOLO11](https://docs.ultralytics.com/models/yolo11/). El tutorial establece entrada mono 16 kHz y 521 clases; el código oficial usa ventanas de 0.96 s con solapamiento del 50 %. Nuestra persistencia usa tres ventanas consecutivas.
+
+`smoke_models.py` ejecuta inferencia real CPU sobre silencio de 3 s y una imagen negra de 320×240. Verifica labels Chainsaw/Walk, footsteps, 521 clases, ausencia de eventos objetivo en esos controles y tres ventanas de persistencia. Reporta tiempos observados incluyendo carga, sin inferir precisión, sensibilidad o desempeño de campo. La validación con motosierra, personas y ruido reales del nodo sigue pendiente.
+
+
+Verificación realizada en esta laptop: el control negro produjo 0 detecciones de persona; el audio sintético de 3 s produjo 6 ventanas, clase principal `Silence`, 521 clases cargadas y ningún evento motosierra/pasos. Se verificó historial de 3 ventanas negativas. Esto demuestra ejecución de los modelos y controles negativos, no precisión de detección en bosque. La persistencia reconoce cualquier tramo de tres ventanas consecutivas dentro del clip, aunque termine en silencio.
