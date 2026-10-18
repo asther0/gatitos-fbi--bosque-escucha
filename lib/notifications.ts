@@ -29,7 +29,7 @@ export async function dispatchNotification(id: string) {
           : {}),
       },
       body: JSON.stringify({ notification, incident, contact }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(25000),
     });
     if (!response.ok) throw new Error(`Webhook respondió ${response.status}`);
     const receipt = await response.json();
@@ -43,7 +43,8 @@ export async function dispatchNotification(id: string) {
     const result = await db
       .from("be_notifications")
       .update({
-        status: "failed",
+        // A webhook timeout does not prove provider delivery failed. Keep the
+        // pending state so a later signed sent/delivered receipt can advance it.
         last_error: error instanceof Error ? error.message : "Fallo webhook",
       })
       .eq("id", id)
@@ -52,7 +53,7 @@ export async function dispatchNotification(id: string) {
     return {
       accepted: false,
       message:
-        "Entrega no confirmada. Reintento persistido para dentro de 5 minutos.",
+        "Entrega no confirmada. Revisa n8n y Zavu antes de reintentar; una reserva existente impide duplicar el envío.",
     };
   }
 }

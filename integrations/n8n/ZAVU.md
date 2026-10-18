@@ -1,6 +1,6 @@
 # Notificaciones WhatsApp con Zavu
 
-Implementación preparada; **no activada ni probada con Zavu real**. No se enviaron mensajes. El export nuevo es `notificaciones-zavu.json`; el borrador manual anterior sigue conservado.
+Implementación de alertas preparada; **backend de alertas aún no activo** por falta de remitente WhatsApp propio. Prueba real de respuesta desde Inbox sandbox realizada el 18 de octubre de 2026: proveedor confirmó `read` y costo total 0. Esta prueba valida el canal sandbox, no el flujo web → n8n → adaptador. El export nuevo es `notificaciones-zavu.json`; el borrador manual anterior sigue conservado.
 
 ## Activación
 
@@ -21,10 +21,22 @@ Una respuesta 202 crea estado **queued**, nunca sent/delivered. Callback firmado
 
 La reserva es permanente. Timeout, 409 o resultado ambiguo queda `uncertain`; una repetición no vuelve a enviar. Reconciliar en panel/API de Zavu y vincular provider_id en `be_zavu_dispatches` antes de procesar recibos. No borrar reserva para reintentar sin comprobar proveedor. Si se rechaza por ventana cerrada, corregir configuración y hacer revisión manual; no hay reenvío automático. Callback válido pero fuera de cinco minutos necesita reconciliación si el proveedor reutiliza timestamps antiguos.
 
-**Pendientes reales:** cuenta/key/remitente Zavu, secret webhook, credenciales n8n, aplicar migración, activar export, destinatario autorizado, prueba recepción/callback/concurrencia con entorno real. La reserva SQL está revisada estáticamente pero aún no ejecutada contra Postgres.
+## Estado real comprobado — 18 octubre 2026
+
+- Clave existente recuperada del panel, guardada únicamente en archivo privado ignorado `.local/zavu-api-key`. API autenticada devuelve HTTP 200.
+- Conversación sandbox recibió «Hola Bosque Escucha». Respuesta de prueba enviada una sola vez mediante Inbox, claramente identificada como prueba técnica. Consulta API confirmó `read`, `costTotal: 0`, ID `jx7b0bcm9cdsa8zhbmhwtx99ad8ghz0k`.
+- `GET /v1/senders` devuelve `items: []`. Ni conversación ni mensajes sandbox contienen `senderId`. No se usa el número telefónico como ID ni se inventa endpoint sandbox.
+- El panel indica que sandbox es el número de Zavu para pruebas con teléfonos del equipo, no un número para clientes. Hace falta conectar un remitente WhatsApp propio para `ZAVU_SENDER_ID`, configurar su webhook v2 y ensayar entrega del adaptador.
+- Código promocional `HACKTHEANDES26` aún no canjeado. No se compraron créditos ni se cambió el plan.
+
+**Pendientes reales:** remitente propio y secret webhook, credenciales n8n de notificaciones y activar export; prueba completa de aprobación/recepción/callback/concurrencia. Una entrega sandbox leída no demuestra esas piezas.
+
+La migración `202610180007_zavu_delivery_transitions.sql` permite que un `failed` posterior a `sent` refleje el fallo de entrega. Un `sent` tardío no borra `failed`; `delivered` permanece terminal. Aplicada en Supabase (HTTP 201), con cinco transiciones comprobadas dentro de una transacción revertida. El timeout de la web es 25 segundos, mayor que los 20 segundos de n8n y los 15 del adaptador. Un error técnico del webhook registra `last_error` y conserva el estado pendiente: no se confunde con un fallo confirmado del proveedor.
 
 ## Verificación local
 
-`npx tsx --test tests/zavu.test.ts` (firma válida, alteración, expiración, v1, secreto ausente) y `npx tsc --noEmit` pasaron. Ningún mensaje ni gasto de proveedor.
+`npx tsx --test tests/zavu.test.ts` (firma válida, alteración, expiración, v1, secreto ausente) y `npx tsc --noEmit` pasaron. Estas comprobaciones no envían mensajes. La prueba sandbox real anterior tuvo costo reportado 0.
 
 Contrato consultado: [API oficial de mensajes y firma](https://www.zavu.dev/en/messaging-api), [API de comunicación](https://www.zavu.dev/en/communication-api). POST `https://api.zavu.dev/v1/messages`, Bearer, `Zavu-Sender`, `idempotencyKey` en cuerpo; repetición devuelve 409. Consulta: 18 octubre 2026.
+
+Prueba SQL reproducible: `tests/zavu-delivery-transitions.sql` (requiere migración 007; revierte todos los fixtures).
