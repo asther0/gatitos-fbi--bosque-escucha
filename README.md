@@ -41,20 +41,22 @@ Este es el flujo previsto del MVP. El tramo físico completo desde el nodo todav
 
 ## Probar desde la URL pública
 
-Abrir **https://bosque-escucha.vercel.app**. La vista pública muestra registros identificados como **DEMO**; permite explorar el panorama, el mapa y las vistas del centro de comando sin contraseña.
+Abrir **https://bosque-escucha.vercel.app**. La vista pública ofrece una **DEMO interactiva sin contraseña**. Pulsa **Probar el flujo** para revisar un incidente, cambiar prioridad, asignar, cerrar y simular una aprobación. Las decisiones quedan en la memoria del navegador y se reinician al recargar; no modifican operaciones reales ni envían mensajes. Los escenarios no incluyen capturas reales.
 
-Para revisar datos operativos y modificar incidentes se necesita la contraseña de operador, compartida por el equipo de forma privada. No se publica en este repositorio. La dirección `127.0.0.1:8765` corresponde al servicio de la laptop que procesa las capturas; **el enlace de entrega al jurado es la URL pública de Vercel**.
+En el mapa, **Mi ubicación** solicita permiso al navegador y muestra tu posición con su margen de precisión. La posición se mantiene en el navegador y no se guarda como ubicación de un nodo.
+
+Para revisar datos operativos y modificar incidentes reales se necesita la contraseña de operador, compartida por el equipo de forma privada. No se publica en este repositorio. La dirección `127.0.0.1:8765` corresponde al servicio de la laptop que procesa las capturas; **el enlace de entrega al jurado es la URL pública de Vercel**.
 
 ### Guion de demo · 3 minutos + 2 de preguntas
 
 | Tiempo | Qué mostrar |
 | --- | --- |
 | 0:00–0:30 · Problema | Para quién se construye y qué decisión facilita: revisar evidencia y priorizar una inspección. |
-| 0:30–2:30 · Producto en vivo | Abrir la URL pública, mostrar un incidente y su evidencia; con acceso de operador, revisar y registrar una decisión. Identificar cualquier dato sintético como DEMO. |
+| 0:30–2:30 · Producto en vivo | Abrir la URL pública, mostrar un incidente y su evidencia; probar una decisión simulada sin contraseña, o usar acceso de operador para un incidente real. Identificar cualquier dato sintético como DEMO. |
 | 2:30–3:00 · Arquitectura | Explicar procesamiento local, persistencia offline, sincronización y revisión humana. Indicar qué integraciones siguen pendientes. |
 | 3:00–5:00 · Preguntas | Responder sobre límites de los modelos, conectividad, privacidad y validación de campo. |
 
-**Pendiente antes de presentar:** preparar un incidente con evidencia reproducible, habilitar el acceso del jurado por un canal privado y ensayar el recorrido completo desde la URL pública. La captura física en vivo depende de resolver el enlace USB e integrar el nodo.
+**Pendiente antes de presentar:** preparar un incidente con evidencia reproducible, ensayar el recorrido completo desde la URL pública. La captura física en vivo depende de resolver el enlace USB e integrar el nodo.
 
 ### Capturas del producto
 
