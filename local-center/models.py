@@ -1,12 +1,13 @@
 """Optional real CPU inference. No model is downloaded or activated implicitly."""
 from collections import deque
 import csv
-import time
 
 class AudioDetector:
     def __init__(self, model_path, class_map_path, threshold=.65, windows=3):
-        import tensorflow_hub as hub
-        self.model=hub.load(model_path)
+        from pathlib import Path
+        if not (Path(model_path)/'saved_model.pb').is_file():raise ValueError('YAMNet SavedModel local requerido')
+        import tensorflow as tf
+        self.model=tf.saved_model.load(str(model_path))
         with open(class_map_path) as f:self.names=[r['display_name'] for r in csv.DictReader(f)]
         self.threshold=threshold
         self.history=deque(maxlen=windows)
@@ -20,13 +21,15 @@ class AudioDetector:
         scores,_,_=self.model(wave)
         scores=scores.numpy()
         outputs=[]
+        persistent=False
         for row in scores:
             chain=float(row[self.names.index('Chainsaw')])
             self.history.append(chain>=self.threshold)
+            persistent=persistent or (len(self.history)==self.windows and all(self.history))
         for label,event in [('Chainsaw','chainsaw'),('Walk, footsteps','footsteps')]:
             if label not in self.names:continue
             confidence=float(np.max(scores[:,self.names.index(label)]))
-            if confidence>=self.threshold:outputs.append({'event_type':event,'confidence':confidence,'persistent':event=='chainsaw' and len(self.history)==self.windows and all(self.history)})
+            if confidence>=self.threshold:outputs.append({'event_type':event,'confidence':confidence,'persistent':event=='chainsaw' and persistent})
         return outputs
 
 class VisionDetector:

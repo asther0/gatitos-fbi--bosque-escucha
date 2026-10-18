@@ -1,0 +1,10 @@
+# Verified CPU environment: Python 3.11, macOS Apple Silicon.
+-r requirements.txt
+numpy==1.26.4
+tensorflow==2.18.1
+tf-keras==2.18.0
+soundfile==0.13.1
+torch==2.6.0
+torchvision==0.21.0
+ultralytics==8.3.253
+opencv-python==4.11.0.86
