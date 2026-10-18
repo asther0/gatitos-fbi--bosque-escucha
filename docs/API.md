@@ -77,3 +77,9 @@ La nube acepta revisiones locales sucesivas por updated_at mientras no haya revi
 ### Propietario del envío
 
 Los registros con `channel:whatsapp`/`sms` pertenecen al worker local; la nube solo despacha `channel:n8n`. Aprobar desde cloud devuelve la notificación existente del incidente, cualquiera sea el canal. Si hay una notificación local del incidente, cloud no despacha otra. No habilitar dos workers para el mismo ID. La respuesta de `/api/sync` incluye `notifications` con estados actuales cloud para que el centro local pueda reconciliar entrega y confirmación en el futuro.
+
+## Adaptador Zavu (pendiente de activación)
+
+- `POST /api/notifications/zavu/send`: credencial interna `N8N_ZAVU_ADAPTER_SECRET`, header `Idempotency-Key` igual a `notification_id` UUID del JSON. Reserva y consulta autorización en DB antes de invocar proveedor; no acepta destino del cliente. Respuesta queued no significa enviado.
+- `POST /api/notifications/zavu/callback`: firma `X-Zavu-Signature` v2 sobre cuerpo crudo con `ZAVU_WEBHOOK_SECRET`, tolerancia cinco minutos. Vincula `data.messageId` previamente persistido; eventos sent/delivered/failed deduplicados atómicamente.
+- Activación, migración pendiente y límites: [ZAVU.md](../integrations/n8n/ZAVU.md).
