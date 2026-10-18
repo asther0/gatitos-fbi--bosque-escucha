@@ -99,7 +99,7 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
     L.circleMarker(point, {radius:8, color:"#fff", weight:3, fillColor:"#2563eb", fillOpacity:1})
       .bindTooltip("Tu ubicación · precisión ±" + Math.round(position.accuracy) + " m").addTo(layer);
     if (!geoCentered.current) {
-      instance.fitBounds(L.circle(point, {radius:Math.max(position.accuracy, 40)}).getBounds(), {maxZoom:17, padding:[50,50]});
+      instance.fitBounds(L.latLng(point).toBounds(Math.max(position.accuracy, 40) * 2), {maxZoom:17, padding:[50,50]});
       geoCentered.current = true; fitted.current = true;
     }
   }, [position, ready, local]);
