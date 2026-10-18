@@ -71,8 +71,14 @@ Config USB kind16 = `SSID UTF8 + byte NUL + PASSWORD UTF8`, sin JSON en el paylo
 python3 -m unittest discover -s firmware -p test_protocol.py
 ```
 
-Cinco pruebas: todas las posiciones de corte de frame, CRC/ruido, tramas concatenadas/ACK, reensamblado durable fuera de orden/duplicados y límite de captura. Compilar valida firmware contra SDK real. La velocidad USB de921600 requiere medición física con tráfico y el nodo de Bill. La cifra teórica92160 bytes/s no es una medición.
+Seis pruebas: todas las posiciones de corte de frame, CRC/ruido, tramas concatenadas/ACK, reensamblado durable fuera de orden/duplicados límite de captura y separación de heartbeat receptor/árbol. Compilar valida firmware contra SDK real. La velocidad USB de921600 requiere medición física con tráfico y el nodo de Bill. La cifra teórica92160 bytes/s no es una medición.
 
 ### Diagnóstico USB aislado
 
 `python3 firmware/serial_benchmark.py --port /dev/cu.usbserial-1140` envía96 tramas de prueba con1024 bytes aleatorios y verifica eco, secuencia y CRC. Kind17 solicita eco; respuesta kind129 conserva payload y header salvo tipo/CRC. No crea capturas, no llama HTTP ni IA. La tasa informada es payload de ida por tiempo de ida/vuelta stop-and-wait, no equivale a caudal Wi-Fi→USB. Ejecutarlo con el puente detenido para tener un único dueño del puerto.
+
+### Heartbeat del árbol y reloj
+
+Bill debe enviar kind3 cada10s, node=A01 y payload JSON objeto (ejemplo `{"battery_pct":73}`; batería solo si fue medida). El bridge persiste un último estado por nodo y el worker llama `POST /api/nodes/A01/heartbeat` autenticado; no crea eventos ni alertas. Los heartbeats pendientes con más30s se descartan para no marcar online un nodo con datos antiguos. Los STATUS de `RECEIVER` nunca registran un árbol en línea. Se conserva configuración/ubicación del nodo en el centro.
+
+Timestamp epoch adelantado más60s o sin flag confiable no se envía como detected_at: el centro usa hora de recepción. Header original permanece en metadata del spool. Así un reloj incorrecto no bloquea sincronización cloud ni hace perder la captura.
