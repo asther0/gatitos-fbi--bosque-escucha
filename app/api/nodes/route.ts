@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { requireOperator } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
         latitude: z.number().min(-90).max(90).nullable(),
         longitude: z.number().min(-180).max(180).nullable(),
       })
-      .parse(await request.json());
+      .parse(await readJson(request));
     const { data, error } = await database()
       .from("be_nodes")
       .upsert(node)

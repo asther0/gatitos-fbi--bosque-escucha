@@ -1,3 +1,4 @@
+import { readJson, metadataSchema } from "@/lib/payload";
 import { isCenterAuthorized } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -37,7 +38,7 @@ const event = z.object({
   persistent: z.boolean(),
   evidence_path: z.string().nullable().optional(),
   evidence_type: z.enum(["image", "audio"]).nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).default({}),
+  metadata: metadataSchema.default({}),
 });
 const incident = z.object({
   id: uuid,
@@ -63,7 +64,7 @@ const audit = z.object({
   incident_id: uuid,
   action: z.string().max(200),
   actor: z.string().max(200),
-  details: z.record(z.string(), z.unknown()),
+  details: metadataSchema,
   created_at: dt,
 });
 const notification = z.object({
@@ -79,7 +80,7 @@ const notification = z.object({
   acknowledged_at: dt.nullable().optional(),
   acknowledged_by: z.string().nullable().optional(),
   attempts: z.number().int().min(0).default(0),
-  next_attempt_at: dt.nullable().optional(),
+  next_attempt_at: z.string().datetime().nullable().optional(),
   provider_id: z.string().nullable().optional(),
   destination: z.string().nullable().optional(),
 });
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
   if (!isCenterAuthorized(request))
     return Response.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const data = snapshot.parse(await request.json());
+    const data = snapshot.parse(await readJson(request, 2_097_152));
     for (const event of data.events) {
       if (
         event.evidence_path &&

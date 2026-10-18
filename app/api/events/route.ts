@@ -1,10 +1,11 @@
+import { readJson } from "@/lib/payload";
 import { isDeviceAuthorized, isOperator } from "@/lib/auth";
 import { ingest, failure, eventSchema } from "@/lib/data";
 export async function POST(request: Request) {
   if (!isDeviceAuthorized(request))
     return Response.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const input = eventSchema.parse(await request.json());
+    const input = eventSchema.parse(await readJson(request));
     if (input.source === "demo" || input.source === "local_center")
       return Response.json(
         { error: "Usa el endpoint correspondiente" },

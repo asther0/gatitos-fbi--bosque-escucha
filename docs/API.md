@@ -8,7 +8,7 @@ Para el MVP principal el receptor USB entrega paquetes al centro Python (ver `lo
 
 1. Configurar nodo con operador: `POST /api/nodes` con `{ "id":"BOSQUE-01", "name":"Nodo 01", "sector":"Sector A", "latitude":null, "longitude":null }`. Registrar coordenadas reales cuando estén disponibles.
 2. Heartbeat cada 30 segundos: `POST /api/nodes/BOSQUE-01/heartbeat`, bearer `DEVICE_INGEST_TOKEN`, body `{ "status":"online", "battery_pct":null }`. Batería solo si se mide. El dashboard muestra offline tras 120 segundos sin contacto.
-3. Subir evidencia: `POST /api/evidence`, multipart campos `file` y `node_id`. JPEG/PNG/WAV, máximo 4 MB, firma binaria validada. Devuelve `{path,type}`. El bucket es privado.
+3. Subir evidencia: `POST /api/evidence`, multipart campos `file` y `node_id`. JPEG/PNG/WAV, máximo 4 MB, firma binaria validada. Devuelve `{path,type}`. El bucket es privado. La ruta usa SHA256 del contenido: repetir el mismo archivo/nodo devuelve la misma ruta (HTTP 200 si ya existe).
 4. Evento: `POST /api/events`, mismo bearer. Ejemplo:
 
 ```json
@@ -36,7 +36,7 @@ La API no realiza inferencia: recibe resultados del centro local. Ambient se alm
 - `POST /api/session` `{password}`; `GET` estado; `DELETE` cerrar sesión.
 - `PATCH /api/incidents/:id` `{status,review_note?,assigned_to?}`. Pendiente → descartado/verificado; verificado → asignado/cerrado; asignado → cerrado.
 - Cambiar prioridad: misma ruta con `{priority,review_note}` (motivo mínimo 3 caracteres), separado del cambio de estado. Cambios manuales se conservan ante nuevas señales.
-- `GET /api/evidence?path=...`: operador obtiene URL firmada de 60 segundos.
+- `GET /api/evidence?path=...`: operador recibe redirección 307 a URL firmada de 60 segundos, compatible con imagen/audio.
 - `POST /api/demo` `{scenario:"chainsaw"|"combined"|"ambient"}`: sesión operador; fuente demo explícita.
 
 ## Contactos y notificaciones
@@ -64,3 +64,11 @@ Estados callback: `sent`, `delivered`, `failed`. Usar exclusivamente evidencia r
 `POST /api/sync` bearer CENTER_SYNC_TOKEN: `{nodes,events,incidents,audit,notifications}`. Arrays acotados; fechas ISO y UUID. Operación atómica. Eventos se normalizan a `source:local_center`; fuente demo y nodo DEMO-01 se rechazan. Decisiones humanas cloud prevalecen sobre snapshots posteriores. La sincronización no envía notificaciones.
 
 Para evidencias, CENTER_SYNC_TOKEN también autoriza `POST /api/evidence`; reemplazar ruta local por el path devuelto antes del snapshot. No subir rutas locales del sistema de archivos. Los reintentos de sincronización conservan los mismos IDs.
+
+### Límites y reconciliación
+
+JSON normal: máximo 64 KB; snapshots: 2 MB; metadata y detalles de auditoría: 16 KB cada objeto. Se aplican también sin Content-Length. JSON inválido devuelve 400, cuerpo excesivo 413. `next_attempt_at` sí admite fecha futura porque representa un reintento planificado.
+
+Antes de subir evidencias de un nodo nuevo, enviar snapshot solo de nodos y demás arrays vacíos. Luego subir archivos y enviar el snapshot completo.
+
+La nube acepta revisiones locales sucesivas por updated_at mientras no haya revisión humana propia en nube. Cuando existe human_review del operador cloud, su decisión prevalece y requiere reconciliación operativa manual. Prioridades ajustadas en nube se conservan. Entrega y confirmación local pueden avanzar el registro cloud; snapshots antiguos nunca degradan sent/delivered ni borran confirmaciones.

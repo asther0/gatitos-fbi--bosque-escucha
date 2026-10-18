@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { requireOperator } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -13,7 +14,7 @@ export async function POST(
   try {
     const { id } = await context.params;
     z.string().uuid().parse(id);
-    z.object({ approved: z.literal(true) }).parse(await request.json());
+    z.object({ approved: z.literal(true) }).parse(await readJson(request));
     const db = database();
     const queued = await db.rpc("be_queue_notification", { target: id });
     check(queued.error);

@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { requireOperator } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -20,7 +21,7 @@ export async function PATCH(
         review_note: z.string().max(2000).optional(),
         assigned_to: z.string().max(120).optional(),
       })
-      .parse(await request.json());
+      .parse(await readJson(request));
     if (body.priority) {
       if (body.status)
         return Response.json(

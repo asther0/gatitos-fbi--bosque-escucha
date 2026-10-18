@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { requireOperator } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
         channel: z.enum(["whatsapp", "sms"]).default("whatsapp"),
         enabled: z.boolean().default(true),
       })
-      .parse(await request.json());
+      .parse(await readJson(request));
     const { data, error } = await database()
       .from("be_contacts")
       .upsert(contact)
