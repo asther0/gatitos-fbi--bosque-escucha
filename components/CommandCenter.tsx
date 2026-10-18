@@ -23,6 +23,7 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
+import { IncidentAssistant } from "@/components/IncidentAssistant";
 import { publicDemo } from "@/lib/public-demo";
 import { OperationsSettings } from "@/components/OperationsSettings";
 import { NotificationReceipt } from "@/components/NotificationReceipt";
@@ -851,6 +852,7 @@ export default function Home() {
                 Indicios para inspección; no confirman tala ilegal ni identidad.
               </small>
             </div>
+            <IncidentAssistant key={selectedIncident.id} incident={selectedIncident} authenticated={authenticated} />
             <h3>Evidencia asociada</h3>
             {data?.events
               .filter((e) => selectedIncident.event_ids.includes(e.id))
