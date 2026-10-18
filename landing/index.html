@@ -32,10 +32,23 @@
         <a href="#proyecto">El proyecto</a>
         <a href="#producto">La plataforma</a>
         <a href="#conversaciones">Conversaciones</a>
-        <a class="button small dark" href="https://bosque-escucha.vercel.app">Abrir plataforma <span aria-hidden="true">&#8594;</span></a>
+        <button class="button small dark" type="button" id="open-preview">Acceder al centro de comando <span aria-hidden="true">&#8594;</span></button>
       </nav>
     </div>
   </header>
+
+  <dialog id="preview-login" class="preview-login" aria-labelledby="preview-login-title">
+    <button type="button" class="preview-close" aria-label="Cerrar vista previa">×</button>
+    <p class="eyebrow green">greenear · Vista previa</p>
+    <h2 id="preview-login-title">Centro de comando</h2>
+    <p>Explora la plataforma con un perfil de administrador de ejemplo.</p>
+    <form id="preview-login-form">
+      <label for="preview-user">Usuario<input id="preview-user" type="text" value="administrador" autocomplete="off" readonly></label>
+      <label for="preview-password">Contraseña de ejemplo<input id="preview-password" type="password" value="greenear-demo" autocomplete="off" readonly></label>
+      <button class="button dark" type="submit">Entrar a la vista previa <span aria-hidden="true">&#8594;</span></button>
+    </form>
+    <small>Datos de ejemplo. Este formulario no autentica ni concede permisos de administrador.</small>
+  </dialog>
 
   <main id="contenido">
 

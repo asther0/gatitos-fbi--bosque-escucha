@@ -17,6 +17,7 @@ Hack the Andes 2026 · Clima y Territorio
 
 | Entrega | Enlace / estado |
 | --- | --- |
+| Landing | **[Conocer greenear](https://bosque-escucha-landing.vercel.app)** |
 | Producto público | **[Abrir greenear](https://bosque-escucha.vercel.app)** |
 | Presentación | **Pendiente:** publicar y agregar URL |
 | Validación técnica | [Resultados y límites de las pruebas](docs/VALIDACION.md) |
