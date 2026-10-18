@@ -27,7 +27,7 @@ import { publicDemo } from "@/lib/public-demo";
 import { OperationsSettings } from "@/components/OperationsSettings";
 import { NotificationReceipt } from "@/components/NotificationReceipt";
 import ForestMap from "@/components/ForestMap";
-import type { DashboardData as Dashboard, Incident } from "@/lib/types";
+import type { DashboardData as Dashboard, Incident, ForestEvent } from "@/lib/types";
 import {
   Badge,
   time,
@@ -59,6 +59,7 @@ export default function Home() {
     [assignee, setAssignee] = useState(""),
     [filter, setFilter] = useState("all"),
     [date, setDate] = useState("");
+  const [includeTests, setIncludeTests] = useState(false);
   const demoState = useRef<Dashboard | null>(null);
   const refresh = useCallback(async () => {
     try {
@@ -66,7 +67,16 @@ export default function Home() {
       const body = await res.json();
       if (!res.ok) throw Error(body.error || "No se pudo sincronizar");
       if (body.authenticated) {
-        setData(body);
+        if (includeTests) setData(body);
+        else {
+          const testNode = (id: string) => id.startsWith("DEMO") || id === "CHECK-LOCAL";
+          const events = body.events.filter((e: ForestEvent) => !testNode(e.node_id) && e.source !== "demo" && !e.metadata?.synthetic_control);
+          const incidents = body.incidents.filter((i: Incident) => !testNode(i.node_id));
+          const ids = new Set(incidents.map((i: Incident) => i.id));
+          setData({...body, nodes:body.nodes.filter((n: {id:string}) => !testNode(n.id)), events, incidents,
+            notifications:body.notifications.filter((n: {incident_id:string}) => ids.has(n.incident_id)),
+            audit:body.audit.filter((a: {incident_id:string}) => ids.has(a.incident_id))});
+        }
       } else {
         demoState.current ??= publicDemo();
         setData(demoState.current);
@@ -80,7 +90,7 @@ export default function Home() {
       setData((current) => current?.authenticated ? current : demoState.current);
       setError(err instanceof Error ? err.message : "No se pudo conectar al centro");
     }
-  }, []);
+  }, [includeTests]);
   useEffect(() => {
     void refresh();
     void fetch("/api/session")
@@ -331,6 +341,7 @@ export default function Home() {
               {authenticated ? "Herramientas demo" : "Probar escenarios"}
             </button>
           </div>
+          {authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye datos de prueba" : "Operación real"}</strong> · {includeTests ? "Los registros DEMO y de control están visibles." : "Sin registros DEMO ni controles de software."}</span><button onClick={() => {setIncludeTests(v => !v); setSelected(null);}}>{includeTests ? "Ocultar pruebas" : "Ver datos de prueba"}</button></div>}
           {!authenticated && (
             <div className="public-banner">
               <span>

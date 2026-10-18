@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 export type MapNode = { id: string; name: string; latitude: number | null; longitude: number | null; status: string; sector: string };
 type PositionedNode = MapNode & { latitude: number; longitude: number };
@@ -22,7 +22,7 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState("");
   useEffect(() => () => { if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current); }, []);
-  function locate() {
+  const locate = useCallback(() => {
     if (!navigator.geolocation) { setGeoError("Este navegador no ofrece ubicación."); return; }
     if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current);
     setGeoError(""); setLocating(true); geoCentered.current = false;
@@ -35,7 +35,8 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
       if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current);
       geoWatch.current = null;
     }, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
-  }
+  }, []);
+  useEffect(() => { locate(); return () => { if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current); }; }, [locate]);
   const select = useRef(onSelect);
   const [ready, setReady] = useState(0);
   const [local, setLocal] = useState(false);
@@ -48,7 +49,7 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
     void import("leaflet").then(L => {
       if (disposed || !element.current) return;
       leaflet.current = L;
-      const instance = L.map(element.current).setView([-12.84, -69.29], 10);
+      const instance = L.map(element.current).setView([-9.19, -75.02], 5);
       map.current = instance;
       markers.current = L.layerGroup().addTo(instance);
       geoLayer.current = L.layerGroup().addTo(instance);
@@ -84,7 +85,7 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
       L.circleMarker([node.latitude,node.longitude], { radius: 10, color: "#fff", weight: 3, fillColor: color(node,alerts), fillOpacity: 1 })
         .bindTooltip(label).on("click", () => select.current(node.id)).addTo(layer);
     }
-    if (!fitted.current && valid.length) {
+    if (!fitted.current && valid.length && geoWatch.current === null) {
       instance.fitBounds(valid.map(n=>[n.latitude,n.longitude] as [number,number]), {padding:[70,70],maxZoom:13});
       fitted.current = true;
     }
