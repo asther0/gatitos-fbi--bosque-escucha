@@ -12,13 +12,17 @@ async def check():
         event_id=str(uuid.uuid4())
         app.ingest(app.EventIn(event_id=event_id,node_id='A01',event_type='chainsaw',confidence=.8,persistent=True,evidence_path=path,evidence_type='audio'))
         app.ingest(app.EventIn(node_id='DEMO-01',event_type='person',confidence=.9,source='demo'))
-        seen={'uploads':0,'syncs':0,'ids':set(),'snapshot':None}
+        seen={'uploads':0,'syncs':0,'ids':set(),'snapshot':None,'nodes':set()}
         def cloud(request):
             assert request.headers['Authorization']=='Bearer sync-smoke'
             if request.url.path=='/api/evidence':
+                assert 'A01' in seen['nodes'],'Upload attempted before cloud node registration'
                 seen['uploads']+=1
                 return httpx.Response(200,json={'path':'A01/private.wav','type':'audio'})
             assert request.url.path=='/api/sync'
+            payload=json.loads(request.content)
+            seen['nodes'].update(n['id'] for n in payload['nodes'])
+            if not payload['events']:return httpx.Response(200,json={'ok':True})
             seen['syncs']+=1
             if seen['syncs']==1:raise httpx.ConnectError('Offline simulation',request=request)
             payload=json.loads(request.content);seen['snapshot']=payload

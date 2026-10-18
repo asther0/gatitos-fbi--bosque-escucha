@@ -1,5 +1,5 @@
 """Small API smoke test, isolated temporary data; no hardware/network/models."""
-import os,tempfile,uuid
+import os,tempfile,uuid,io,wave
 with tempfile.TemporaryDirectory() as folder:
     os.environ['LOCAL_DATA_DIR']=folder;os.environ['LOCAL_CENTER_TOKEN']='smoke-only';os.environ['NOTIFICATION_CALLBACK_SECRET']='callback-only'
     os.environ.pop('CLOUD_BASE_URL',None);os.environ.pop('N8N_NOTIFY_WEBHOOK',None)
@@ -8,6 +8,16 @@ with tempfile.TemporaryDirectory() as folder:
     with TestClient(app) as c:
         assert c.get('/api/dashboard').status_code==401
         c.headers['Authorization']='Bearer smoke-only'
+        audio=io.BytesIO()
+        with wave.open(audio,'wb') as f:f.setnchannels(1);f.setsampwidth(2);f.setframerate(16000);f.writeframes(b'\0'*32000)
+        capture_id=str(uuid.uuid4())
+        raw=c.post('/api/raw',files={'file':('clip.wav',audio.getvalue())},data={'node_id':'RAW-01','capture_id':capture_id})
+        assert raw.status_code==200,raw.text
+        assert raw.json()['analysis_status']=='blocked' and 'deshabilitado' in raw.json()['analysis_error']
+        assert c.get('/api/evidence',params={'path':raw.json()['path']}).status_code==200
+        duplicate=c.post('/api/raw',files={'file':('clip.wav',audio.getvalue())},data={'node_id':'RAW-01','capture_id':capture_id})
+        assert duplicate.json()==raw.json()
+        assert len(c.get('/api/dashboard').json()['events'])==0,'Raw input must not fabricate detections'
         event={'event_id':str(uuid.uuid4()),'node_id':'TEST-01','event_type':'chainsaw','confidence':.8,'persistent':True,'source':'demo'}
         r=c.post('/api/events',json=event);assert r.status_code==200,r.text
         incident=r.json()['incident'];assert incident['priority']=='medium'
