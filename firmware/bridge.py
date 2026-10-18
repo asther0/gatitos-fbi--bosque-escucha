@@ -30,6 +30,12 @@ class Spool:
         if not (folder/'complete').exists() and all((folder/f'{i:04d}.part').exists() for i in range(frame.count)):
             atomic_write(folder/'complete',b'1')
         return key
+    def heartbeat(self,frame,status):
+        if frame.node=='RECEIVER' or not re.fullmatch(r'[A-Za-z0-9_-]{1,16}',frame.node):return
+        folder=self.root/'heartbeats';folder.mkdir(exist_ok=True,mode=0o700)
+        battery=status.get('battery_pct');body={}
+        if isinstance(battery,(int,float)) and not isinstance(battery,bool) and 0<=battery<=100:body['battery_pct']=battery
+        atomic_write(folder/(frame.node+'.json'),json.dumps({'received_at':time.time(),'body':body}).encode())
     def pending(self):
         return [p.parent for p in self.root.glob('*/complete') if not (p.parent/'uploaded.json').exists()]
     def payload(self,folder):
@@ -53,10 +59,17 @@ def uploader(spool,url,token,stop):
     import httpx
     with httpx.Client(headers={'Authorization':'Bearer '+token},timeout=60) as client:
         while not stop.is_set():
+            for heartbeat in (spool.root/'heartbeats').glob('*.json'):
+                try:
+                    original=heartbeat.read_text();record=json.loads(original)
+                    if time.time()-record['received_at']<=30:
+                        response=client.post(url.rstrip('/')+'/api/nodes/'+heartbeat.stem+'/heartbeat',json=record['body']);response.raise_for_status()
+                    if heartbeat.exists() and heartbeat.read_text()==original:heartbeat.unlink()
+                except Exception as error:print('heartbeat pending',heartbeat.stem,type(error).__name__,flush=True)
             for folder in spool.pending():
                 try:
                     meta,raw,name,mime=spool.payload(folder);fields={'node_id':meta['node_id'],'capture_id':meta['capture_id']}
-                    if meta['flags']&1 and 1577836800000<=meta['timestamp_ms']<=4102444800000:fields['detected_at']=datetime.fromtimestamp(meta['timestamp_ms']/1000,timezone.utc).isoformat()
+                    if meta['flags']&1 and 1577836800000<=meta['timestamp_ms']<=int((time.time()+60)*1000):fields['detected_at']=datetime.fromtimestamp(meta['timestamp_ms']/1000,timezone.utc).isoformat()
                     response=client.post(url.rstrip('/')+'/api/raw',files={'file':(name,raw,mime)},data=fields);response.raise_for_status()
                     result=response.json();atomic_write(folder/'uploaded.json',json.dumps(result).encode());print('capture uploaded',meta['capture_id'],'analysis:',result.get('analysis_status','unknown'),flush=True)
                 except Exception as error:print('capture retained for retry',folder.name,type(error).__name__,str(error)[:180],flush=True)
@@ -77,9 +90,14 @@ def main():
                 if frame.kind==STATUS:
                     # Status may include IP but never credentials.
                     try:
-                        status=json.loads(frame.payload);print('receiver status',status,flush=True)
+                        status=json.loads(frame.payload)
+                        if not isinstance(status,dict):raise ValueError('status must be a JSON object')
+                        print('transport status',frame.node,status,flush=True)
                         configured_connected=configured_connected or bool(status.get('wifi_connected'))
-                    except (ValueError,UnicodeError):print('status frame received',flush=True)
+                        if not args.wifi_config:spool.heartbeat(frame,status)
+                    except (ValueError,UnicodeError):print('invalid status JSON ignored',flush=True)
+                    except OSError as error:
+                        print('heartbeat not persisted',type(error).__name__,flush=True);port.write(acknowledge(frame,2).encode());continue
                     port.write(acknowledge(frame).encode())
                 elif frame.kind in (AUDIO,JPEG) and not args.wifi_config:
                     try:spool.accept(frame);port.write(acknowledge(frame).encode())

@@ -1,6 +1,6 @@
 import tempfile,unittest,wave,io
 from pathlib import Path
-from protocol import Frame,Parser,AUDIO,JPEG,acknowledge
+from protocol import Frame,Parser,AUDIO,JPEG,STATUS,acknowledge
 from bridge import Spool
 class ProtocolTests(unittest.TestCase):
  def test_every_fragment_boundary(self):
@@ -21,6 +21,12 @@ class ProtocolTests(unittest.TestCase):
    restored=Spool(d);meta,raw,name,mime=restored.payload(restored.pending()[0]);self.assertEqual(meta['capture_id'],key)
    with wave.open(io.BytesIO(raw)) as wav:self.assertEqual(wav.getframerate(),16000);self.assertEqual(wav.readframes(2),b'\1\0\2\0')
    with self.assertRaises(ValueError):spool.accept(Frame(AUDIO,1,10,0,2,payload=b'xx'))
+ def test_heartbeat_never_marks_receiver_as_tree(self):
+  with tempfile.TemporaryDirectory() as d:
+   spool=Spool(d);spool.heartbeat(Frame(STATUS,node='RECEIVER'),{'battery_pct':90});self.assertFalse((Path(d)/'heartbeats').exists())
+   spool.heartbeat(Frame(STATUS,node='A01'),{'battery_pct':73,'password':'do-not-store'})
+   import json
+   record=json.loads((Path(d)/'heartbeats/A01.json').read_text());self.assertEqual(record['body'],{'battery_pct':73})
  def test_reject_unbounded_capture(self):
   with tempfile.TemporaryDirectory() as d:
    with self.assertRaises(ValueError):Spool(d).accept(Frame(AUDIO,count=65535,payload=b'x'))
