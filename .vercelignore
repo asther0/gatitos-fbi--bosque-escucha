@@ -1,0 +1,8 @@
+.local/
+.env*
+local-center/
+firmware/
+docs/
+tests/
+scripts/
+README.md

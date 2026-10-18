@@ -49,6 +49,7 @@ Los eventos y archivos se conservan en SQLite/disco. La sincronización registra
 | API, autorización y procesamiento | `app/api/`, `lib/` |
 | Base de datos y reglas transaccionales | `supabase/migrations/` |
 | Ingesta, evidencia, IA y cola offline | `local-center/` |
+| Receptor ESP32, protocolo BESC y puente USB | [firmware/README.md](firmware/README.md) |
 | Contrato de dispositivo, sync y notificaciones | [docs/API.md](docs/API.md) |
 | Sponsors y decisiones de herramientas | [docs/SPONSORS.md](docs/SPONSORS.md) |
 
@@ -57,7 +58,7 @@ Los eventos y archivos se conservan en SQLite/disco. La sincronización registra
 ```bash
 npm run typecheck
 npm run build
-node --test tests/payload.test.ts
+npm run test:unit
 # Contra un servidor en ejecución; genera únicamente registros DEMO:
 node scripts/smoke-cloud.mjs
 # O contra el despliegue público:
