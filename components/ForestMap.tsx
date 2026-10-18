@@ -15,6 +15,27 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
   const markers = useRef<LayerGroup | null>(null);
   const leaflet = useRef<typeof import("leaflet") | null>(null);
   const fitted = useRef(false);
+  const geoWatch = useRef<number | null>(null);
+  const geoLayer = useRef<LayerGroup | null>(null);
+  const geoCentered = useRef(false);
+  const [position, setPosition] = useState<{lat: number; lng: number; accuracy: number; time: number} | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState("");
+  useEffect(() => () => { if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current); }, []);
+  function locate() {
+    if (!navigator.geolocation) { setGeoError("Este navegador no ofrece ubicación."); return; }
+    if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current);
+    setGeoError(""); setLocating(true); geoCentered.current = false;
+    geoWatch.current = navigator.geolocation.watchPosition(p => {
+      setPosition({lat:p.coords.latitude, lng:p.coords.longitude, accuracy:p.coords.accuracy, time:p.timestamp});
+      setLocating(false); setGeoError("");
+    }, error => {
+      setLocating(false);
+      setGeoError(error.code === 1 ? "Permite la ubicación en los ajustes del navegador y vuelve a intentarlo." : error.code === 3 ? "La ubicación tardó demasiado. Vuelve a intentarlo." : "No se pudo obtener tu ubicación. Comprueba la localización del dispositivo.");
+      if (geoWatch.current !== null) navigator.geolocation.clearWatch(geoWatch.current);
+      geoWatch.current = null;
+    }, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
+  }
   const select = useRef(onSelect);
   const [ready, setReady] = useState(0);
   const [local, setLocal] = useState(false);
@@ -30,6 +51,8 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
       const instance = L.map(element.current).setView([-12.84, -69.29], 10);
       map.current = instance;
       markers.current = L.layerGroup().addTo(instance);
+      geoLayer.current = L.layerGroup().addTo(instance);
+      geoCentered.current = false;
       fitted.current = false;
       let errors = 0, loaded = 0;
       const fallback = () => { if (!disposed) { setFailure(true); setLocal(true); } };
@@ -47,7 +70,7 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
     return () => {
       disposed = true;
       if (timeout) clearTimeout(timeout);
-      map.current?.remove(); map.current = null; markers.current = null;
+      map.current?.remove(); map.current = null; markers.current = null; geoLayer.current = null;
     };
   }, [local]);
   useEffect(() => {
@@ -66,12 +89,29 @@ export default function ForestMap({nodes, alerts, onSelect}: { nodes: MapNode[];
       fitted.current = true;
     }
   }, [nodes, alerts, ready, local]);
+  useEffect(() => {
+    const L = leaflet.current, instance = map.current, layer = geoLayer.current;
+    if (!L || !instance || !layer || !position || local) return;
+    layer.clearLayers();
+    const point: [number, number] = [position.lat, position.lng];
+    L.circle(point, {radius:position.accuracy, color:"#2563eb", weight:1, fillOpacity:0.1}).addTo(layer);
+    L.circleMarker(point, {radius:8, color:"#fff", weight:3, fillColor:"#2563eb", fillOpacity:1})
+      .bindTooltip("Tu ubicación · precisión ±" + Math.round(position.accuracy) + " m").addTo(layer);
+    if (!geoCentered.current) {
+      instance.fitBounds(L.circle(point, {radius:Math.max(position.accuracy, 40)}).getBounds(), {maxZoom:17, padding:[50,50]});
+      geoCentered.current = true; fitted.current = true;
+    }
+  }, [position, ready, local]);
   const valid = nodes.filter(positioned);
   const latitudes = valid.map(n=>n.latitude), longitudes = valid.map(n=>n.longitude);
   const minLat = Math.min(...latitudes), minLon = Math.min(...longitudes);
   const latRange = Math.max(...latitudes)-minLat, lonRange = Math.max(...longitudes)-minLon;
   return <div className="map-frame">
     <button className="map-mode" onClick={()=>{setFailure(false);setLocal(value=>!value)}}>{local ? "Ver OpenStreetMap" : "Plano local"}</button>
+    <button className="map-mode map-locate" onClick={locate} disabled={locating}>{locating ? "Buscando ubicación…" : "Mi ubicación"}</button>
+    {(position || geoError || locating) && <div className="map-location-status" role="status" aria-live="polite">
+      {geoError || (locating ? "Permite el acceso a tu ubicación cuando lo solicite el navegador." : position && <><strong>Tu ubicación</strong> {position.lat.toFixed(6)}, {position.lng.toFixed(6)} · precisión ±{Math.round(position.accuracy)} m · {new Date(position.time).toLocaleTimeString()}<br/><small>Visible solo en este navegador.{local ? " Abre OpenStreetMap para verla sobre el mapa." : " El círculo azul indica el margen de precisión."}</small></>)}
+    </div>}
     {local ? <div className="forest-map schematic-map" aria-label="Plano esquemático local de nodos">
       <div className="schematic-heading"><strong>Plano de sectores</strong><span>{failure ? "Cartografía externa no disponible" : "Disponible sin cartografía externa"} · ubicación relativa</span></div>
       {!valid.length && <p className="schematic-empty">Configura las coordenadas de un nodo para ubicarlo aquí.</p>}
