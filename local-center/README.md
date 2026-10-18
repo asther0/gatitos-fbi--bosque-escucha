@@ -153,3 +153,9 @@ Fuentes primarias: [tutorial YAMNet](https://www.tensorflow.org/hub/tutorials/ya
 
 
 Verificación realizada en esta laptop: el control negro produjo 0 detecciones de persona; el audio sintético de 3 s produjo 6 ventanas, clase principal `Silence`, 521 clases cargadas y ningún evento motosierra/pasos. Se verificó historial de 3 ventanas negativas. Esto demuestra ejecución de los modelos y controles negativos, no precisión de detección en bosque. La persistencia reconoce cualquier tramo de tres ventanas consecutivas dentro del clip, aunque termine en silencio.
+
+### Protección de demostraciones
+
+Aprobar una notificación de un nodo cuyo ID comienza por `DEMO` o de un incidente que contiene cualquier evento `source=demo` registra una aprobación simulada con estado `blocked`, sin crear un trabajo de envío. El worker también bloquea y retira trabajos antiguos de demostración antes de cualquier HTTP, incluso cuando n8n está configurado. `smoke_demo_guard.py` verifica ambos casos con un webhook simulado y exige cero solicitudes externas.
+
+Los callbacks `sent` y `delivered` requieren `provider_id` no vacío. Un callback tardío `failed` no degrada estados `sent` o `delivered`. La confirmación de envío externo de una demostración se rechaza. Los IDs de nodo configurados deben cumplir el mismo formato del contrato cloud (1–64 caracteres alfanuméricos, guion o guion bajo).
