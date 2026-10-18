@@ -224,7 +224,7 @@ export default function Home() {
             <TreePine size={27} />
           </span>
           <span>
-            Bosque<span className="brand-light">Escucha</span>
+            greenear
           </span>
         </a>
         <div className="workspace-label">CENTRO DE COMANDO</div>
@@ -296,7 +296,7 @@ export default function Home() {
             >
               <RefreshCw size={16} />
             </button>
-            <span className="avatar small">BE</span>
+            <span className="avatar small">GE</span>
           </div>
         </header>
         <main>
@@ -801,7 +801,7 @@ export default function Home() {
           )}
           <footer>
             <span>
-              <TreePine size={13} /> Bosque Escucha{" "}
+              <TreePine size={13} /> greenear{" "}
               <span className="footer-separator">/</span> Tecnología para cuidar
               el territorio
             </span>

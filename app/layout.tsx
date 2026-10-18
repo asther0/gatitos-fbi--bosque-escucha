@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Bosque Escucha · Centro de comando",
+  title: "greenear · Centro de comando",
   description:
     "Vigilancia del bosque con evidencia acústica y visual. Hack the Andes 2026.",
 };

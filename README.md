@@ -1,4 +1,4 @@
-# Bosque Escucha
+# greenear
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
@@ -17,7 +17,7 @@ Hack the Andes 2026 · Clima y Territorio
 
 | Entrega | Enlace / estado |
 | --- | --- |
-| Producto público | **[Abrir Bosque Escucha](https://bosque-escucha.vercel.app)** |
+| Producto público | **[Abrir greenear](https://bosque-escucha.vercel.app)** |
 | Presentación | **Pendiente:** publicar y agregar URL |
 | Validación técnica | [Resultados y límites de las pruebas](docs/VALIDACION.md) |
 | Especificación | [PRD en Markdown](docs/Bosque_Escucha_PRD_MVP.md) |
@@ -26,7 +26,7 @@ Hack the Andes 2026 · Clima y Territorio
 
 Pensado para guardaparques, vigilantes comunitarios y responsables de conservación que necesitan revisar indicios de actividad en el bosque y decidir dónde inspeccionar. Un sonido aislado no basta para interpretar lo que ocurre: el operador necesita contexto, evidencia y un registro de su decisión.
 
-Bosque Escucha reúne audio e imágenes de nodos de campo, propone una prioridad y permite que una persona revise la evidencia antes de coordinar una respuesta. **La validación con usuarios reales del territorio está pendiente.**
+greenear reúne audio e imágenes de nodos de campo, propone una prioridad y permite que una persona revise la evidencia antes de coordinar una respuesta. **La validación con usuarios reales del territorio está pendiente.**
 
 ## Cómo funciona
 

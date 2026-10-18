@@ -1,4 +1,4 @@
-# Imágenes referenciales de Bosque Escucha
+# Imágenes referenciales de greenear
 
 Generadas con IA mediante la herramienta de generación de imágenes de OpenAI durante la creación de esta landing. La autora autorizó imágenes referenciales porque todavía no existe evidencia real de usuarios, reuniones, pruebas o compras.
 
