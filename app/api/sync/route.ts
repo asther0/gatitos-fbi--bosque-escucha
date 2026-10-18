@@ -118,7 +118,23 @@ export async function POST(request: Request) {
       payload: data,
     });
     check(error);
-    return Response.json({ ok: true, ...result });
+    const ids = [
+      ...new Set(data.notifications.map((item) => item.incident_id)),
+    ];
+    const delivery = ids.length
+      ? await database()
+          .from("be_notifications")
+          .select(
+            "id,incident_id,channel,status,sent_at,delivered_at,acknowledged_at,acknowledged_by,provider_id,attempts,last_error",
+          )
+          .in("incident_id", ids)
+      : { data: [], error: null };
+    check(delivery.error);
+    return Response.json({
+      ok: true,
+      ...result,
+      notifications: delivery.data || [],
+    });
   } catch (e) {
     return failure(e, 400);
   }
