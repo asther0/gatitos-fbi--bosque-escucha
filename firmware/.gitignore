@@ -1,0 +1,6 @@
+receiver/build/
+*.bin
+*.elf
+*.map
+wifi*.json
+spool/
