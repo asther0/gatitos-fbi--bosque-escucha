@@ -23,3 +23,29 @@ end;$$;
 revoke all on function public.be_ingest_event(jsonb) from public,anon,authenticated;
 grant execute on function public.be_ingest_event(jsonb) to service_role;
 
+
+create or replace function public.be_sync_snapshot(payload jsonb) returns jsonb language plpgsql security definer set search_path=public as $$
+declare item jsonb;
+begin
+ -- Sync is atomic. Cloud human decisions and delivery records win over stale snapshots.
+ for item in select value from jsonb_array_elements(payload->'nodes') loop
+ insert into be_nodes select * from jsonb_populate_record(null::be_nodes,item)
+ on conflict(id) do update set name=excluded.name,sector=excluded.sector,latitude=excluded.latitude,longitude=excluded.longitude,status=excluded.status,battery_pct=excluded.battery_pct,last_seen=excluded.last_seen where excluded.last_seen is not null and (be_nodes.last_seen is null or excluded.last_seen>=be_nodes.last_seen);
+ end loop;
+ for item in select value from jsonb_array_elements(payload->'events') loop
+ insert into be_events select * from jsonb_populate_record(null::be_events,item) on conflict(id) do nothing;
+ end loop;
+ for item in select value from jsonb_array_elements(payload->'incidents') loop
+ insert into be_incidents select * from jsonb_populate_record(null::be_incidents,item)
+ on conflict(id) do update set title=excluded.title,priority=case when exists(select 1 from be_audit where incident_id=be_incidents.id and action='priority_changed') then be_incidents.priority else excluded.priority end,status=excluded.status,summary=excluded.summary,event_ids=excluded.event_ids,assigned_to=excluded.assigned_to,review_note=excluded.review_note,updated_at=excluded.updated_at where be_incidents.status='pending_review' and excluded.updated_at>be_incidents.updated_at;
+ end loop;
+ for item in select value from jsonb_array_elements(payload->'audit') loop
+ insert into be_audit select * from jsonb_populate_record(null::be_audit,item) on conflict(id) do nothing;
+ end loop;
+ for item in select value from jsonb_array_elements(payload->'notifications') loop
+ insert into be_notifications select * from jsonb_populate_record(null::be_notifications,jsonb_build_object('attempts',0,'next_attempt_at',now())||item) on conflict do nothing;
+ end loop;
+ return jsonb_build_object('received',jsonb_build_object('nodes',jsonb_array_length(payload->'nodes'),'events',jsonb_array_length(payload->'events'),'incidents',jsonb_array_length(payload->'incidents'),'audit',jsonb_array_length(payload->'audit'),'notifications',jsonb_array_length(payload->'notifications')));
+end;$$;
+revoke all on function public.be_sync_snapshot(jsonb) from public,anon,authenticated;
+grant execute on function public.be_sync_snapshot(jsonb) to service_role;
