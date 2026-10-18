@@ -4,7 +4,7 @@ Implementación preparada; **no activada ni probada con Zavu real**. No se envia
 
 ## Activación
 
-1. Aplicar `supabase/migrations/202610180006_zavu_delivery.sql` y desplegar servidor. Esta migración no fue aplicada por este cambio.
+1. Aplicar `supabase/migrations/202610180006_zavu_delivery.sql` y desplegar servidor. Aplicada al proyecto Supabase el 18 de octubre de 2026 (HTTP 201); pendiente ensayo de entrega real.
 2. Obtener API key y remitente WhatsApp conectado en Zavu. Configurar en Vercel `ZAVUDEV_API_KEY`, `ZAVU_SENDER_ID`, `ZAVU_WEBHOOK_SECRET` y un nuevo secreto aleatorio `N8N_ZAVU_ADAPTER_SECRET`. No exponerlos en navegador ni export.
 3. Importar export en n8n. En **Solicitud aprobada**, asignar credencial Header Auth con nombre `Authorization`, valor `Bearer <N8N_WEBHOOK_SECRET>`. En **Despachar con reserva persistente**, usar otra credencial Header Auth con `Authorization: Bearer <N8N_ZAVU_ADAPTER_SECRET>`.
 4. Publicar workflow y configurar `N8N_WEBHOOK_URL` en servidor con su URL production `/webhook/bosque-notificaciones`. `N8N_WEBHOOK_SECRET` debe coincidir con paso 3.

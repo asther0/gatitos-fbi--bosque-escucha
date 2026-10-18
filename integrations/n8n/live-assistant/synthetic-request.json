@@ -1,0 +1,19 @@
+{
+  "incident": {
+    "id": "00000000-0000-4000-8000-000000000003",
+    "title": "Prueba sintética: señal de motosierra",
+    "summary": "Datos ficticios para probar el contrato; no representan un incidente real.",
+    "priority": "medium",
+    "status": "pending_review",
+    "node_id": "SYNTHETIC-01"
+  },
+  "events": [
+    {
+      "event_type": "chainsaw",
+      "confidence": 0.83,
+      "persistent": true,
+      "detected_at": "2026-10-18T00:00:00.000Z"
+    }
+  ],
+  "mode": "live"
+}
