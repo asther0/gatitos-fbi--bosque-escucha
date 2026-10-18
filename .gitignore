@@ -10,3 +10,5 @@ local-center/data/
 *.tsbuildinfo
 tmp/
 .vercel
+.local/
+local-center/models/
