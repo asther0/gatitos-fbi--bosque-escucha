@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-10-18T05:44:26.427Z",
+  "url": "https://bosque-escucha.vercel.app/api/assistant",
+  "deployment": "dpl_C4djMseSkreaxag4xDvryoQLUsj1",
+  "input_kind": "existing synthetic DEMO-01 incident, operator authenticated",
+  "http_status": 200,
+  "response": {
+    "summary": "DATOS DE PRUEBA — Son datos sintéticos de prueba que indican la detección de una motosierra persistente y la presencia de una persona en una ventana de 120 segundos. No se confirma actividad ilegal, pero se recomienda revisar la evidencia.",
+    "recommended_action": "Revisión humana de la evidencia y registro de una decisión por un operador. La decisión final requiere revisión humana.",
+    "limitations": [
+      "Este análisis usa datos sintéticos de prueba; no describe un incidente real.",
+      "Datos sintéticos de prueba, no un incidente real.",
+      "Falta información sobre el contexto y las acciones de las personas registradas.",
+      "No se confirma actividad ilegal a partir de los datos proporcionados.",
+      "Los eventos son registrados desde una fuente de demostración.",
+      "Los niveles de confianza son altos pero no garantizan veracidad.",
+      "Solo metadatos proporcionados; no se escuchó audio ni se observaron imágenes.",
+      "Confidence es un score del detector, no probabilidad de ilegalidad ni evidencia de identidad.",
+      "Sin búsqueda ni verificación externa; fuentes vacías.",
+      "Toda decisión requiere revisión humana. No se enviaron notificaciones."
+    ],
+    "sources": [],
+    "model": "gpt-4o-mini-2024-07-18"
+  }
+}

@@ -1,14 +1,14 @@
 {
   "id": "I91iM6yA5v9jt2zX",
   "name": "Bosque Escucha - Notificaciones Zavu",
-  "active": false,
+  "active": true,
   "isArchived": false,
-  "versionId": "d2222a9f-2a1c-40b7-921e-42e732972986",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "versionId": "30636d1b-1cf1-4fbb-8247-166709a4224e",
+  "activeVersionId": "30636d1b-1cf1-4fbb-8247-166709a4224e",
+  "triggerCount": 1,
   "nodeCount": 2,
   "createdAt": "2026-10-18T04:58:06.134Z",
-  "updatedAt": "2026-10-18T05:22:08.662Z",
+  "updatedAt": "2026-10-18T05:42:22.137Z",
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": true,
@@ -73,8 +73,14 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "disabled": true,
-      "webhookId": "7e5d97b6-32a3-468d-b195-355e018abdd1"
+      "disabled": false,
+      "webhookId": "7e5d97b6-32a3-468d-b195-355e018abdd1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "J7yVzVon1bCdA5uH",
+          "name": "Header Auth account 2"
+        }
+      }
     },
     {
       "id": "send",
@@ -105,11 +111,19 @@
         "options": {
           "timeout": 20000
         }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WjkusLSxYCfSOR0e",
+          "name": "Header Auth account 3"
+        }
       }
     }
   ],
   "nodeGroups": [],
-  "activeVersion": null,
+  "activeVersion": {
+    "sameAsDraft": true
+  },
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"

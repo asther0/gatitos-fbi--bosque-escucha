@@ -1,4 +1,4 @@
-# Asistente n8n: inferencia real validada; publicación pendiente de Header Auth
+# Asistente n8n: publicado y webhook autenticado validado
 
 Verificado el 2026-10-18. Workflow [pTeB2WRm0xk7bdKZ](https://jhomar-dev.app.n8n.cloud/workflow/pTeB2WRm0xk7bdKZ).
 
@@ -12,14 +12,18 @@ Verificado el 2026-10-18. Workflow [pTeB2WRm0xk7bdKZ](https://jhomar-dev.app.n8n
 - Las ejecuciones 1 y 2 detectaron una incompatibilidad real: con JSON schema el nodo n8n entrega `content.text` como objeto. Se corrigió el validador para aceptar ese objeto o una cadena JSON y se añadieron pruebas de ambas formas.
 - El coste monetario de las llamadas no figura en la respuesta MCP; no se inventa un coste. La ejecución 2 consumió 364 tokens de entrada y 138 de salida. La ejecución 1 no conservó datos por la política inicial de retención.
 
-## Estado pendiente
+## Publicación y autenticación comprobadas
 
-El workflow sigue **sin publicar** (`active=false`, sin versión activa). El webhook está deshabilitado y exige `headerAuth`; falta crear y asociar la credencial. No se ha probado tráfico HTTP autenticado ni la integración web de producción. La inferencia manual no demuestra que el endpoint público esté activo.
+El usuario autorizó las tres credenciales Header Auth. Se asociaron mediante sus IDs existentes, se habilitó el webhook y se publicó el workflow. Relectura: `active=true`, versión activa `e28cae1c-1df9-4b03-9d5a-1a3c68935909`, idéntica al borrador.
 
-La política de la herramienta de navegador requiere confirmación al crear credenciales persistentes. La solicitud al usuario está pendiente; no se guardaron credenciales ni se retiró la autenticación para continuar.
+Endpoint: `https://jhomar-dev.app.n8n.cloud/webhook/bosque-incidente-asistente`.
 
-URL prevista: `https://jhomar-dev.app.n8n.cloud/webhook/bosque-incidente-asistente`.
-Crear Header Auth con `Name=Authorization`, `Value=Bearer <secreto compartido>`. Guardar en servidor `N8N_ASSISTANT_WEBHOOK_URL` y `N8N_ASSISTANT_WEBHOOK_SECRET` (sin prefijo Bearer). El secreto nunca va en estos archivos.
+Pruebas HTTP de producción con la muestra ficticia:
+- Sin Authorization: HTTP 403.
+- Bearer incorrecto: HTTP 403.
+- Bearer correcto: HTTP 200 con respuesta real de `gpt-4o-mini-2024-07-18`, fuentes vacías y revisión humana.
+
+`http-verification.json` conserva respuestas sin encabezados ni secretos. La integración `/api/assistant` en Vercel también devolvió HTTP200 con sesión de operador y el incidente sintético DEMO-01. En el deploy `dpl_C4djMseSkreaxag4xDvryoQLUsj1` se comprobó la etiqueta determinista `DATOS DE PRUEBA`, limitación sintética y fuentes vacías. Evidencia `production-verification.json`.
 
 ## Archivos y validación
 
@@ -31,10 +35,12 @@ Crear Header Auth con `Name=Authorization`, `Value=Bearer <secreto compartido>`.
 
 El límite de salida es 650 tokens y el workflow tiene timeout de 25 segundos. No usa herramientas de búsqueda, audio o imágenes y no envía notificaciones. Retención de ejecuciones de producción y manuales restaurada a `none`/false; las ejecuciones 2 y 3 se conservaron temporalmente para diagnosticar exclusivamente la muestra sintética.
 
-## Finalización tras credencial
+## Artefacto reproducible y producción
 
-1. Asociar la credencial Header Auth y habilitar el webhook.
-2. Publicar, verificar versión activa y rechazos sin bearer/con bearer incorrecto.
-3. Configurar las dos variables Vercel y realizar una prueba desde `/api/assistant` con una entrada autorizada.
+La plantilla `workflow.prepared.*` conserva su webhook deshabilitado para que una importación nueva exija asociar sus propias credenciales antes de publicar. El export `remote-observed.json` refleja el workflow realmente publicado y solo contiene referencias de credenciales, nunca sus valores.
 
-No repetir la selección de modelo ni sustituir el resumen manual por una afirmación de integración productiva.
+El flujo de notificaciones `I91iM6yA5v9jt2zX` también fue publicado con las dos credenciales Header Auth: inbound y adaptador. Versión `30636d1b-1cf1-4fbb-8247-166709a4224e`; sin bearer o con bearer incorrecto devuelve HTTP403. Publicar el workflow no implica que Zavu tenga un sender disponible ni demuestra entrega de una alerta.
+
+Prueba posterior al deploy Vercel `dpl_3Zkpmjb6vajLPEnP8r1RG3yZB59q`: adaptador Zavu con bearer correcto y UUID ficticio inexistente devuelve HTTP503 `Falta configurar Zavu y remitente WhatsApp`; webhook de notificaciones con bearer correcto devuelve HTTP500 genérico al propagar ese error. No se envió mensaje ni se reservó notificación. Evidencia: `../notificaciones-http-verification.json`. La configuración de sender sigue pendiente y el sistema bloquea el envío.
+
+Corrección posterior de procedencia: la lista permitida inicial eliminaba `events.source` y `events.evidence_type`. Ahora conserva ambos como cadenas opcionales de hasta 100 caracteres y calcula `synthetic` por node_id DEMO/CHECK-LOCAL/SYNTHETIC o eventos demo/synthetic. El prompt exige marcar estos casos al inicio del resumen y en limitaciones. La aplicación añade además etiquetado determinista, pues un prompt no garantiza la clasificación. Publicado nuevamente como versión `4c34b00b-0b12-4ddd-a802-4e71b3319bba`; export actualizado, validación SDK y prueba local de procedencia correctas. No se realizó otra inferencia pagada para este cambio.

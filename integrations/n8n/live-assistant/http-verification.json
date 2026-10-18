@@ -1,0 +1,33 @@
+[
+  {
+    "case": "missing",
+    "status": 403,
+    "body": "Authorization data is wrong!"
+  },
+  {
+    "case": "incorrect",
+    "status": 403,
+    "body": "Authorization data is wrong!"
+  },
+  {
+    "case": "valid",
+    "status": 200,
+    "body": {
+      "summary": "Se reportó un evento de motosierra el 18 de octubre de 2026, con un score de confianza de 0.83. Los datos se indican como ficticios para pruebas y no representan un incidente real.",
+      "recommended_action": "Se sugiere que un operador revise la evidencia relacionada con el evento reportado y registre una decisión. La decisión final requiere revisión humana.",
+      "limitations": [
+        "Los datos son ficticios y no reflejan un evento real.",
+        "No hay información adicional sobre el contexto del evento.",
+        "La credibilidad de las fuentes no puede ser determinada.",
+        "No se puede establecer causalidad basada en la información proporcionada.",
+        "Falta información sobre la ubicación del evento.",
+        "Solo metadatos proporcionados; no se escuchó audio ni se observaron imágenes.",
+        "Confidence es un score del detector, no probabilidad de ilegalidad ni evidencia de identidad.",
+        "Sin búsqueda ni verificación externa; fuentes vacías.",
+        "Toda decisión requiere revisión humana. No se enviaron notificaciones."
+      ],
+      "sources": [],
+      "model": "gpt-4o-mini-2024-07-18"
+    }
+  }
+]

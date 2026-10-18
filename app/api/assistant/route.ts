@@ -39,6 +39,12 @@ export async function POST(request: Request) {
     const body = await readJson(new Request("https://response.local", { method: "POST", body: upstream.body, duplex: "half" } as RequestInit), 32768);
     const result = resultSchema.safeParse(body);
     if (!result.success) return Response.json({ error: "El asistente devolvió una respuesta incompleta o inválida." }, { status: 502 });
+    // Test provenance comes from stored metadata, never from model compliance.
+    const synthetic = /^(DEMO|CHECK-)/.test(incident.node_id) || events?.some(event => event.source === "demo");
+    if (synthetic) {
+      result.data.summary = `DATOS DE PRUEBA — ${result.data.summary}`.slice(0, 4000);
+      result.data.limitations = ["Este análisis usa datos sintéticos de prueba; no describe un incidente real.", ...result.data.limitations.slice(0, 9)];
+    }
     return Response.json(result.data, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const timeout = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");

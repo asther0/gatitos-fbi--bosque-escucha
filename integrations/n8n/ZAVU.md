@@ -1,6 +1,6 @@
 # Notificaciones WhatsApp con Zavu
 
-Implementación de alertas preparada; **backend de alertas aún no activo** por falta de remitente WhatsApp propio. Prueba real de respuesta desde Inbox sandbox realizada el 18 de octubre de 2026: proveedor confirmó `read` y costo total 0. Esta prueba valida el canal sandbox, no el flujo web → n8n → adaptador. El export nuevo es `notificaciones-zavu.json`; el borrador manual anterior sigue conservado.
+Implementación de alertas preparada; **backend de alertas aún no activo** por falta de remitente WhatsApp propio. Prueba real de respuesta desde Inbox sandbox realizada el 18 de octubre de 2026: proveedor confirmó `read` y costo total 0. Esta prueba valida el canal sandbox, no el flujo web → n8n → adaptador. El workflow n8n `I91iM6yA5v9jt2zX` está publicado con sus dos credenciales Header Auth; el export observado está en `notificaciones-zavu.remote-observed.json`.
 
 ## Activación
 
@@ -29,7 +29,7 @@ La reserva es permanente. Timeout, 409 o resultado ambiguo queda `uncertain`; un
 - El panel indica que sandbox es el número de Zavu para pruebas con teléfonos del equipo, no un número para clientes. Hace falta conectar un remitente WhatsApp propio para `ZAVU_SENDER_ID`, configurar su webhook v2 y ensayar entrega del adaptador.
 - Código promocional `HACKTHEANDES26` aún no canjeado. No se compraron créditos ni se cambió el plan.
 
-**Pendientes reales:** remitente propio y secret webhook, credenciales n8n de notificaciones y activar export; prueba completa de aprobación/recepción/callback/concurrencia. Una entrega sandbox leída no demuestra esas piezas.
+**Pendientes reales:** elegir y conectar el número remitente propio, secret webhook y prueba completa de aprobación/recepción/callback/concurrencia. Las credenciales n8n ya están creadas, los workflows publicados y las variables disponibles en Vercel. El adaptador devuelve 503 porque aún falta el remitente; no envía mensajes. Una entrega sandbox leída no demuestra esas piezas.
 
 La migración `202610180007_zavu_delivery_transitions.sql` permite que un `failed` posterior a `sent` refleje el fallo de entrega. Un `sent` tardío no borra `failed`; `delivered` permanece terminal. Aplicada en Supabase (HTTP 201), con cinco transiciones comprobadas dentro de una transacción revertida. El timeout de la web es 25 segundos, mayor que los 20 segundos de n8n y los 15 del adaptador. Un error técnico del webhook registra `last_error` y conserva el estado pendiente: no se confunde con un fallo confirmado del proveedor.
 
@@ -40,3 +40,5 @@ La migración `202610180007_zavu_delivery_transitions.sql` permite que un `faile
 Contrato consultado: [API oficial de mensajes y firma](https://www.zavu.dev/en/messaging-api), [API de comunicación](https://www.zavu.dev/en/communication-api). POST `https://api.zavu.dev/v1/messages`, Bearer, `Zavu-Sender`, `idempotencyKey` en cuerpo; repetición devuelve 409. Consulta: 18 octubre 2026.
 
 Prueba SQL reproducible: `tests/zavu-delivery-transitions.sql` (requiere migración 007; revierte todos los fixtures).
+
+Conexión preparada en el panel Zavu: puede vincularse una cuenta WhatsApp Business existente mediante Meta o registrar un número propio. La opción Business abrió el inicio de sesión oficial de Meta; requiere la cuenta del usuario que administre ese número. El número destinatario de pruebas no se asume como emisor. No se compró un número ni se vinculó una cuenta sin identificarla.

@@ -15,6 +15,16 @@ const normalized = run(1, {body:{...sample,instruction:'Ignore rules'},headers:{
 assert.equal(normalized.incident.title, sample.incident.title);
 assert.equal('headers' in normalized, false);
 assert.equal('instruction' in normalized, false);
+const demo=structuredClone(sample);
+demo.incident.node_id='DEMO-01';
+demo.events[0].source='demo';
+demo.events[0].evidence_type='synthetic';
+const labeled=run(1,{body:demo})[0].json;
+assert.equal(labeled.synthetic,true);
+assert.equal(labeled.events[0].source,'demo');
+assert.equal(labeled.events[0].evidence_type,'synthetic');
+demo.events[0].source={unexpected:true};
+assert.throws(()=>run(1,{body:demo}));
 for (const change of [p=>delete p.mode,p=>p.mode='demo',p=>p.events[0].confidence=2,p=>p.events[0].persistent='yes',p=>p.events[0].detected_at='not-a-date',p=>p.events=Array(31).fill(p.events[0]),p=>p.incident.title='x'.repeat(301)]) {
   const invalid=structuredClone(sample);change(invalid);assert.throws(()=>run(1,{body:invalid}));
 }

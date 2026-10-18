@@ -1,0 +1,20 @@
+{
+  "syntheticNonexistentNotification": true,
+  "providerCallExpected": false,
+  "results": [
+    {
+      "case": "adapter-valid",
+      "status": 503,
+      "body": {
+        "error": "Falta configurar Zavu y remitente WhatsApp"
+      }
+    },
+    {
+      "case": "webhook-valid",
+      "status": 500,
+      "body": {
+        "message": "Error in workflow"
+      }
+    }
+  ]
+}
