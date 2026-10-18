@@ -801,3 +801,10 @@ textarea { resize: vertical; min-height: 88px; }
   .hero { min-height: 720px; }
   .hero-photo { object-position: center 50%; }
 }
+
+/* Conversations supplied by the team */
+.feedback-feature{display:grid;grid-template-columns:1.25fr 1fr;gap:36px;align-items:center;padding:32px 0;border-top:1px solid #dce2d8}
+.feedback-feature img,.feedback-gallery img{display:block;width:100%;height:auto;border-radius:12px}
+.feedback-feature h3{font-size:28px;margin:8px 0}.feedback-role{font-size:14px;color:#60715f}.feedback-section blockquote{margin:16px 0;line-height:1.7;font-size:18px}.feedback-section small,.feedback-note{color:#687565;font-size:13px;line-height:1.6}
+.feedback-pair,.feedback-gallery{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px}.feedback-pair article{padding:28px;background:#edf1e6;border-radius:12px}.feedback-gallery figure{margin:0}.feedback-gallery figcaption{padding-top:10px;font-size:13px;color:#687565}.feedback-note{margin-top:24px}
+@media(max-width:760px){.feedback-feature,.feedback-pair,.feedback-gallery{grid-template-columns:1fr}.feedback-feature{gap:20px}.feedback-pair article{padding:22px}}
