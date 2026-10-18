@@ -37,6 +37,7 @@ La API no realiza inferencia: recibe resultados del centro local. Ambient se alm
 - `PATCH /api/incidents/:id` `{status,review_note?,assigned_to?}`. Pendiente → descartado/verificado; verificado → asignado/cerrado; asignado → cerrado.
 - Cambiar prioridad: misma ruta con `{priority,review_note}` (motivo mínimo 3 caracteres), separado del cambio de estado. Cambios manuales se conservan ante nuevas señales.
 - `GET /api/evidence?path=...`: operador recibe redirección 307 a URL firmada de 60 segundos, compatible con imagen/audio.
+- `POST /api/events` también admite `source:demo` exclusivamente con sesión operador y nodo DEMO-01, para reintentos con UUID estable. Tokens de dispositivo no autorizan demo.
 - `POST /api/demo` `{scenario:"chainsaw"|"combined"|"ambient"}`: sesión operador; fuente demo explícita.
 
 ## Contactos y notificaciones
