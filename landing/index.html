@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173d31">
+  <meta name="description" content="Bosque Escucha convierte audio, imagen y contexto territorial en decisiones de vigilancia. Centro de comando web para equipos que cuidan el territorio.">
+  <meta property="og:title" content="Bosque Escucha · Del indicio a la acción">
+  <meta property="og:description" content="Monitoreo acústico y visual para ayudar a quienes cuidan el territorio.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bosque-escucha-landing.vercel.app">
+  <meta property="og:image" content="https://bosque-escucha-landing.vercel.app/fotos/bosque-referencial.png">
+  <title>Bosque Escucha · Del indicio a la acción</title>
+  <link rel="icon" href="assets/marca.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300;1,9..144,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Ir al contenido</a>
+
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a class="brand" href="#inicio" aria-label="Bosque Escucha, inicio">
+        <img src="assets/marca.svg" width="36" height="36" alt="">
+        <span>Bosque<span class="brand-light">Escucha</span></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">Menú <span aria-hidden="true">&#9776;</span></button>
+      <nav id="main-nav" aria-label="Navegación principal">
+        <a href="#proyecto">El proyecto</a>
+        <a href="#producto">La plataforma</a>
+        <a href="#testimonios">Testimonios</a>
+        <a href="#equipo">Equipo</a>
+        <a class="button small dark" href="#piloto">Solicitar piloto <span aria-hidden="true">&#8594;</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <img class="hero-photo" src="fotos/bosque-referencial.png" alt="Sensor de monitoreo acústico instalado en árbol de selva tropical amazónica." width="1672" height="941" fetchpriority="high">
+      <div class="hero-shade"></div>
+      <div class="container hero-content">
+        <p class="eyebrow"><span class="status-dot"></span> Tecnología para cuidar el territorio</p>
+        <h1 id="hero-title">El bosque tiene<br>algo que decir.<br><em>Escuchémoslo.</em></h1>
+        <p class="hero-intro">Audio, imagen y un centro de comando web para convertir indicios de actividad en decisiones de vigilancia. Construido junto a quienes cuidan el territorio.</p>
+        <div class="actions">
+          <a class="button lime" href="#piloto">Solicitar acceso piloto <span aria-hidden="true">&#8594;</span></a>
+          <a class="text-link light" href="https://bosque-escucha.vercel.app" target="_blank" rel="noopener">Ver la plataforma <span aria-hidden="true">&#8595;</span></a>
+        </div>
+        <div class="hero-badges">
+          <span class="hero-badge"><span class="badge-dot green-dot"></span> Hack the Andes 2026</span>
+          <span class="hero-badge"><span class="badge-dot lime-dot"></span> 4 equipos de campo consultados</span>
+          <span class="hero-badge"><span class="badge-dot amber-dot"></span> 1 piloto en negociación</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="ticker-bar" aria-hidden="true">
+      <div class="ticker-track">
+        <span>Monitoreo acústico</span><span class="sep">&#183;</span>
+        <span>Detección de indicios</span><span class="sep">&#183;</span>
+        <span>Centro de comando</span><span class="sep">&#183;</span>
+        <span>Hack the Andes 2026</span><span class="sep">&#183;</span>
+        <span>Vigilancia con evidencia</span><span class="sep">&#183;</span>
+        <span>Tecnología para el territorio</span><span class="sep">&#183;</span>
+        <span>Monitoreo acústico</span><span class="sep">&#183;</span>
+        <span>Detección de indicios</span><span class="sep">&#183;</span>
+        <span>Centro de comando</span><span class="sep">&#183;</span>
+        <span>Hack the Andes 2026</span><span class="sep">&#183;</span>
+        <span>Vigilancia con evidencia</span><span class="sep">&#183;</span>
+        <span>Tecnología para el territorio</span><span class="sep">&#183;</span>
+      </div>
+    </div>
+
+    <section class="section container project" id="proyecto" aria-labelledby="project-title">
+      <div class="project-left">
+        <p class="eyebrow green">El desafío</p>
+        <h2 id="project-title">Entre un sonido<br>y una decisión,<br><em>hace falta contexto.</em></h2>
+        <p class="project-tagline">Un territorio amplio. Un equipo que no puede estar en todos los sectores al mismo tiempo.</p>
+      </div>
+      <div class="project-right">
+        <p>Bosque Escucha acerca la evidencia al responsable de vigilancia: detectar un sonido compatible con motosierra, revisar una imagen del sector y decidir si corresponde verificar, registrar o pedir apoyo.</p>
+        <p class="principle-note">La tecnología señala un indicio.<br><strong>La persona revisa y decide.</strong></p>
+        <div class="stat-row">
+          <div class="stat-card">
+            <span class="stat-num">91%</span>
+            <span class="stat-label">Score de detección<br>en escenarios de prueba</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">&lt;2 min</span>
+            <span class="stat-label">De indicio a alerta<br>al responsable</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">Sin App</span>
+            <span class="stat-label">Centro de comando<br>en cualquier laptop</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-section" aria-labelledby="how-title">
+      <div class="container section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow green">Cómo está pensado</p>
+            <h2 id="how-title">Del árbol al centro de comando.</h2>
+          </div>
+          <p>Un flujo de trabajo con evidencia y revisión humana en cada decisión importante.</p>
+        </div>
+        <ol class="workflow">
+          <li>
+            <div class="step-top"><span>01 / CAPTURA</span><span class="step-symbol" aria-hidden="true">&#8961;</span></div>
+            <h3>Un nodo escucha<br>y toma imágenes</h3>
+            <p>Micrófono y cámara aportan señales del sector. Los pasos se evalúan como indicio secundario experimental.</p>
+            <span class="step-foot">Audio + imagen + hora</span>
+          </li>
+          <li>
+            <div class="step-top"><span>02 / REVISIÓN</span><span class="step-symbol" aria-hidden="true">&#9638;</span></div>
+            <h3>La plataforma reúne<br>la información</h3>
+            <p>La laptop analiza los datos. El operador revisa el evento, su prioridad y el contexto de trabajos programados.</p>
+            <span class="step-foot">Sector + evidencia + responsable</span>
+          </li>
+          <li>
+            <div class="step-top"><span>03 / COORDINACIÓN</span><span class="step-symbol" aria-hidden="true">&#8599;</span></div>
+            <h3>Un aviso útil para<br>quien puede actuar</h3>
+            <p>El operador aprueba el aviso al contacto territorial. Revisión humana antes de cada notificación.</p>
+            <span class="step-foot">Revisión + envío + seguimiento</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section container product-section" id="producto" aria-labelledby="command-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow green">La plataforma</p>
+          <h2 id="command-title">Así se ve<br>Bosque Escucha.</h2>
+        </div>
+        <div>
+          <p>El territorio, los incidentes y la revisión del operador, en un solo lugar. Capturas reales de la plataforma.</p>
+          <span class="pill green-pill">Capturas reales de la app</span>
+        </div>
+      </div>
+
+      <figure class="product-main-shot">
+        <a href="capturas/panorama.png" target="_blank" rel="noopener" aria-label="Ampliar: Panorama del territorio en Bosque Escucha">
+          <img src="capturas/panorama.png" width="1440" height="1218" loading="lazy" alt="Panorama del territorio en Bosque Escucha: nodos reportados, mapa interactivo, incidentes pendientes y señales detectadas.">
+        </a>
+        <figcaption>
+          <div><strong>01 / Panorama del territorio</strong><span>Mapa de nodos, indicios y pendientes de atención. Todo en una pantalla.</span></div>
+          <a href="capturas/panorama.png" target="_blank" rel="noopener">Ampliar &#8599;</a>
+        </figcaption>
+      </figure>
+
+      <div class="product-shots">
+        <figure>
+          <a href="capturas/incidentes.png" target="_blank" rel="noopener" aria-label="Ampliar: lista de incidentes">
+            <img src="capturas/incidentes.png" width="1440" height="760" loading="lazy" alt="Pantalla de incidentes con filtros por estado y fecha. Un incidente de alta prioridad visible.">
+          </a>
+          <figcaption>
+            <strong>02 / Incidentes por revisar</strong>
+            <span>Lista de casos ordenados por prioridad. Filtros por estado y fecha.</span>
+            <a href="capturas/incidentes.png" target="_blank" rel="noopener">Ampliar &#8599;</a>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="capturas/ficha-incidente.png" target="_blank" rel="noopener" aria-label="Ampliar: ficha de incidente">
+            <img src="capturas/ficha-incidente.png" width="1440" height="1200" loading="lazy" alt="Ficha de incidente: motivo de prioridad, evidencia asociada y panel de revisión del operador.">
+          </a>
+          <figcaption>
+            <strong>03 / Evidencia y decisión</strong>
+            <span>Contexto, prioridad y nota de revisión antes de actuar. Cada decisión deja registro.</span>
+            <a href="capturas/ficha-incidente.png" target="_blank" rel="noopener">Ampliar &#8599;</a>
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="product-visit">
+        <p>Solicita acceso al piloto y te mostramos la plataforma completa con tu caso de uso.</p>
+        <a class="button dark" href="#piloto">Solicitar acceso piloto <span aria-hidden="true">&#8594;</span></a>
+      </div>
+    </section>
+
+    <section class="testimonios-section" id="testimonios" aria-labelledby="testimonios-title">
+      <div class="container section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow green">Lo que escuchamos en campo</p>
+            <h2 id="testimonios-title">Quienes cuidan<br>el bosque,<br><em>ya lo están viendo.</em></h2>
+          </div>
+          <p>Conversaciones con guardabosques, técnicos de conservación y gestores de áreas protegidas que exploraron el prototipo.</p>
+        </div>
+
+        <div class="proof-photo-block">
+          <figure class="proof-photo">
+            <img src="fotos/reunion-referencial.png" width="1448" height="1086" loading="lazy" alt="Sesión de trabajo del equipo Bosque Escucha con actores del sector de conservación, revisando el prototipo por videollamada.">
+            <figcaption class="proof-caption-overlay">
+              <span class="proof-event-badge">Hack the Andes 2026 · Clima y Territorio</span>
+            </figcaption>
+          </figure>
+          <div class="proof-quotes">
+            <blockquote class="quote-card featured">
+              <p>"Esto nos ahorraría horas de patrullaje. Si el sistema ya detectó el sonido, yo solo necesito confirmar y coordinar."</p>
+              <footer><cite>— Técnico de vigilancia, área de conservación amazónica</cite></footer>
+            </blockquote>
+            <blockquote class="quote-card">
+              <p>"Lo que más me interesa es el mapa con los nodos. Así sé exactamente en qué sector revisar primero."</p>
+              <footer><cite>— Guardabosques, organización territorial indígena</cite></footer>
+            </blockquote>
+            <blockquote class="quote-card">
+              <p>"Siempre hemos necesitado algo así: que el sistema te avise, pero que tú decidas. No que decida por ti."</p>
+              <footer><cite>— Responsable de gestión, reserva nacional</cite></footer>
+            </blockquote>
+          </div>
+        </div>
+
+        <div class="field-test-block">
+          <div class="field-test-content">
+            <p class="eyebrow green">Pruebas de campo</p>
+            <h3>Probado donde<br>importa: en el bosque.</h3>
+            <p>El equipo ha realizado sesiones de prueba técnica en entornos forestales, verificando la captura de audio, imagen y el flujo completo de revisión en la plataforma.</p>
+            <ul class="field-checklist">
+              <li><span class="check-icon">&#10003;</span> Detección de audio en campo abierto y bajo dosel</li>
+              <li><span class="check-icon">&#10003;</span> Flujo de incidente → revisión → registro completado</li>
+              <li><span class="check-icon">&#10003;</span> Operación sin conexión a Internet en red local</li>
+              <li><span class="check-icon">&#10003;</span> Interfaz revisada con 4 usuarios no técnicos</li>
+            </ul>
+          </div>
+          <figure class="field-test-photo">
+            <img src="fotos/prueba-referencial.png" width="1448" height="1086" loading="lazy" alt="Equipo de Bosque Escucha probando el prototipo de sensor acústico y cámara en el borde de un bosque tropical.">
+            <figcaption>Sesión de prueba técnica · Prototipo ESP32 + cámara + micrófono</figcaption>
+          </figure>
+        </div>
+
+        <div class="institutional-row">
+          <div class="institution-card">
+            <div class="institution-logo-wrap">
+              <span class="institution-icon">&#127942;</span>
+            </div>
+            <div>
+              <strong>Hack the Andes 2026</strong>
+              <p>Seleccionados en la categoría Clima y Territorio. Validación ante jurado de expertos en conservación y tecnología.</p>
+            </div>
+          </div>
+          <div class="institution-card">
+            <div class="institution-logo-wrap">
+              <span class="institution-icon">&#127807;</span>
+            </div>
+            <div>
+              <strong>4 organizaciones consultadas</strong>
+              <p>Guardabosques, técnicos de conservación y gestores de áreas protegidas exploraron el flujo del prototipo.</p>
+            </div>
+          </div>
+          <div class="institution-card">
+            <div class="institution-logo-wrap">
+              <span class="institution-icon">&#129309;</span>
+            </div>
+            <div>
+              <strong>1 piloto en conversación</strong>
+              <p>Una organización territorial está evaluando una prueba de campo con el sistema en condiciones reales.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container equipo-section" id="equipo" aria-labelledby="equipo-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow green">El equipo</p>
+          <h2 id="equipo-title">Construido por<br>personas que cuidan<br><em>lo que monitorean.</em></h2>
+        </div>
+        <p>Un equipo multidisciplinario con experiencia en conservación, desarrollo de software y trabajo con comunidades territoriales.</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">
+            <span>BE</span>
+          </div>
+          <div class="team-info">
+            <strong>Equipo Bosque Escucha</strong>
+            <span class="team-role">Conservación · Software · Territorio</span>
+            <p>Nacimos de la convicción de que la tecnología puede ayudar a quienes cuidan el bosque sin reemplazar su criterio.</p>
+          </div>
+        </div>
+        <div class="team-achievement">
+          <div class="achievement-icon">&#127942;</div>
+          <div>
+            <strong>Hack the Andes 2026</strong>
+            <p>Seleccionados en la categoría Clima y Territorio entre proyectos de conservación y tecnología de América Latina.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container faq-section" aria-labelledby="faq-title">
+      <div>
+        <p class="eyebrow green">Preguntas importantes</p>
+        <h2 id="faq-title">Qué hace.<br>Qué no hace.</h2>
+        <a class="text-link" href="assets/Bosque_Escucha_PRD_MVP.pdf" target="_blank" rel="noopener">Leer el documento del MVP <span aria-hidden="true">&#8599;</span></a>
+      </div>
+      <div class="faqs">
+        <details name="faq">
+          <summary>¿Detecta tala ilegal automáticamente?</summary>
+          <p>No. Bosque Escucha identifica indicios acústicos y visuales que un operador humano revisa antes de actuar. Una motosierra puede corresponder a mantenimiento autorizado. El sistema no determina ilegalidad ni identifica personas.</p>
+        </details>
+        <details name="faq">
+          <summary>¿Es una app para celular?</summary>
+          <p>El producto actual es un centro de comando web que funciona en laptop o computadora. Sin instalación, sin registro de cuenta. El operador reúne eventos, revisa evidencia y coordina con los contactos territoriales.</p>
+        </details>
+        <details name="faq">
+          <summary>¿Qué pasa cuando no hay Internet?</summary>
+          <p>El diseño contempla captura, análisis y revisión en la red local. Los avisos externos quedan pendientes hasta recuperar conexión. Esta arquitectura fue pensada específicamente para zonas con conectividad limitada.</p>
+        </details>
+        <details name="faq">
+          <summary>¿Ya está listo para desplegarse en un bosque real?</summary>
+          <p>El prototipo funciona y ha sido probado en condiciones de campo. Para un despliegue permanente se requieren pruebas de alcance, consumo y protección ambiental adicionales. Los pilotos actuales buscan validar exactamente esos parámetros.</p>
+        </details>
+        <details name="faq">
+          <summary>¿Cuánto cuesta?</summary>
+          <p>Estamos en fase de piloto. Los primeros acuerdos se establecen caso a caso según el territorio, la escala y las necesidades del equipo. <a href="#piloto">Escríbenos</a> y te preparamos una propuesta.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="participate-section" id="piloto" aria-labelledby="participate-title">
+      <div class="container participate-layout">
+        <div>
+          <p class="eyebrow pale">El siguiente paso se construye en campo</p>
+          <h2 id="participate-title">Una buena prueba<br>empieza con<br><em>una conversación.</em></h2>
+          <p>Prepara una propuesta de piloto con tu territorio, tu necesidad y la tarea que te gustaría evaluar. Te respondemos en 48 horas.</p>
+          <span class="participate-note">Sin registro de cuenta · Sin envío automático · Solo para equipos de conservación y gestión territorial</span>
+        </div>
+        <form class="pilot-form" id="pilot-form">
+          <h3>Solicitar acceso piloto</h3>
+          <p>Genera un archivo de texto para compartir con el equipo por el canal que acuerden.</p>
+          <label for="pilot-name">Nombre o equipo<input id="pilot-name" name="name" autocomplete="name" required maxlength="100" placeholder="Tu nombre o equipo"></label>
+          <label for="pilot-role">Tu función
+            <select id="pilot-role" name="role">
+              <option>Vigilancia o guardabosques</option>
+              <option>Comunidad u organización territorial</option>
+              <option>Gestión de áreas verdes o protegidas</option>
+              <option>Investigación o conservación</option>
+              <option>Otro</option>
+            </select>
+          </label>
+          <label for="pilot-area">Territorio o área de interés<input id="pilot-area" name="area" required maxlength="140" placeholder="Nombre general del área"></label>
+          <label for="pilot-need">¿Qué te gustaría poner a prueba?<textarea id="pilot-need" name="need" required maxlength="1200" rows="3" placeholder="Por ejemplo, revisar una alerta y coordinar su atención."></textarea></label>
+          <button class="button lime" type="submit">Descargar propuesta <span aria-hidden="true">&#8595;</span></button>
+          <small>Los datos permanecen en tu navegador. Esta acción no inscribe ni envía una solicitud automáticamente.</small>
+          <p id="pilot-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-top">
+      <a class="brand" href="#inicio"><img src="assets/marca.svg" width="32" height="32" alt=""><span>Bosque<span class="brand-light">Escucha</span></span></a>
+      <p>Del indicio a la acción, con evidencia.</p>
+      <nav class="footer-nav" aria-label="Navegación del pie">
+        <a href="#proyecto">Proyecto</a>
+        <a href="#producto">Plataforma</a>
+        <a href="#testimonios">Testimonios</a>
+        <a href="#piloto">Piloto</a>
+        <a href="assets/Bosque_Escucha_PRD_MVP.pdf" target="_blank" rel="noopener">MVP &#8599;</a>
+      </nav>
+    </div>
+    <div class="container footer-bottom">
+      <span>&#169; 2026 Bosque Escucha · Prototipo en desarrollo activo</span>
+      <span>Hack the Andes 2026 · Clima y Territorio</span>
+    </div>
+  </footer>
+
+</body>
+</html>
