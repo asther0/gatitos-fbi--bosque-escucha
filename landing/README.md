@@ -14,4 +14,3 @@ cd landing
 python3 -m http.server 8080
 ```
 
-El formulario de piloto descarga una propuesta de texto; no registra ni envía datos.
