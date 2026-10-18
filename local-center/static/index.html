@@ -1,19 +1,45 @@
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bosque Escucha · Local</title>
-<style>body{font:15px system-ui;background:#091510;color:#dfecdf;margin:0}header{padding:22px;border-bottom:1px solid #294432;display:flex;gap:20px;align-items:center}h1{font-size:23px;margin:0}button,input,select{background:#203d2c;border:1px solid #487153;color:#e8f2e9;padding:10px;border-radius:6px}button{cursor:pointer}main{padding:24px;max-width:1300px;margin:auto}.grid{display:grid;grid-template-columns:1fr 1.3fr;gap:24px}.card{padding:18px;background:#14271c;border:1px solid #2b4935;border-radius:10px;margin:12px 0}.muted{color:#a0b9a7} .high{color:#ffb194}.medium{color:#e8d58a}.observation{color:#9dbcc9}img{max-width:100%;max-height:300px}audio{max-width:100%}.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}pre{white-space:pre-wrap;font:13px system-ui}#error{color:#ffba99}svg{width:100%;height:160px;background:#10271b;border-radius:8px}@media(max-width:750px){.grid{grid-template-columns:1fr}}</style>
-<header><h1>◉ Bosque Escucha</h1><span class="muted">Centro local · funciona sin Internet</span></header><main>
-<div id="login" class="card"><label>Token local <input id="token" type="password" autocomplete="off" placeholder="Pega data/.token"></label> <button id="enter">Conectar</button><p class="muted">Solo permanece en memoria de esta pestaña. No se envía a servicios externos.</p></div>
-<div id="error" role="alert"></div><section id="app" hidden><div class="row"><button id="demo">Crear demo combinada</button><button id="ambient">Demo ruido ambiente</button><button id="refresh">Actualizar</button></div><p class="muted">Las coordenadas corresponden al nodo, no a la persona. Sin reconocimiento facial.</p><h2>Plano local de nodos</h2><p class="muted">Plano esquemático precargado, sin base cartográfica externa. Solo ubicaciones registradas.</p><svg id="map" viewBox="0 0 800 160" aria-label="Plano local"></svg><div id="nodes"></div><div class="grid"><section><h2>Incidentes</h2><div id="list"></div></section><section><h2>Revisión y evidencia</h2><div id="detail">Selecciona un incidente.</div></section></div><h2>Capturas y análisis local</h2><div id="captures"></div><h2>Cola persistente</h2><div id="queue"></div><h2>Trazabilidad</h2><div id="audit"></div></section></main>
+<style>body{font:15px system-ui;background:#091510;color:#dfecdf;margin:0}header{padding:22px;border-bottom:1px solid #294432;display:flex;gap:20px;align-items:center}h1{font-size:23px;margin:0}button,input,select{background:#203d2c;border:1px solid #487153;color:#e8f2e9;padding:10px;border-radius:6px}button{cursor:pointer}main{padding:24px;max-width:1300px;margin:auto}.grid{display:grid;grid-template-columns:1fr 1.3fr;gap:24px}.card{padding:18px;background:#14271c;border:1px solid #2b4935;border-radius:10px;margin:12px 0}.muted{color:#a0b9a7} .high{color:#ffb194}.medium{color:#e8d58a}.observation{color:#9dbcc9}img{max-width:100%;max-height:300px}audio{max-width:100%}.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}pre{white-space:pre-wrap;font:13px system-ui}#error{color:#ffba99}svg{width:100%;height:160px;background:#10271b;border-radius:8px}@media(max-width:750px){.grid{grid-template-columns:1fr}}
+:root{color-scheme:dark}body{line-height:1.5}header{padding:18px 28px;justify-content:space-between}h1{font-size:20px;font-weight:650}header .muted{font-size:13px}main{max-width:820px;padding:32px 24px}h2{font-size:20px}button{font:inherit;font-size:14px;padding:11px 17px;border-radius:9px}button:hover{background:#2b4c38}button:disabled{opacity:.5;cursor:wait}button:focus-visible,summary:focus-visible{outline:2px solid #9ed0ae;outline-offset:4px}#mvp{padding:28px;border-radius:16px;background:#122219}#mvp h2{font-size:26px;letter-spacing:-.6px;margin:0 0 4px}.mvp-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.device-pill{font-size:12px;color:#b4c9ba;background:#203328;padding:5px 10px;border-radius:20px}.intro{margin:0 0 22px;color:#a0b9a7;font-size:14px}#mvp-start{background:#b9d9a8;border-color:#b9d9a8;color:#132116;font-weight:650}#mvp-start:hover{background:#cbe5bd}#mvp-capture{background:transparent}#mvp-status{font-size:14px;color:#c4d6c9;margin:18px 0}#mvp-result:not(:empty){border-top:1px solid #2b4132;padding-top:18px;margin-top:20px}#mvp-result p{margin:0}.capture-time{font-size:12px;color:#a0b9a7;margin-bottom:5px!important}.result-text{font-size:18px;font-weight:550}summary{cursor:pointer;font-size:14px;color:#aec5b5;padding:9px 0}details{margin-top:10px}details p{font-size:14px}.mvp-options{border-top:1px solid #2b4132;margin-top:20px;padding-top:10px}.mvp-options details+details{margin-top:0}.footnote{font-size:12px;color:#91aa99;margin:20px 0 0}#mvp-evidence{margin:10px 0;width:100%;height:38px}#mvp-scores{font-size:13px}#mvp-network{font-size:12px}.center-details{border-top:1px solid #294432;padding-top:8px;margin-top:24px}label{font-size:13px}input{display:block;max-width:100%;box-sizing:border-box;margin-top:5px}.grid{grid-template-columns:1fr}#list .card{padding:14px}#wifi-password,#wifi-ssid{width:240px}#mvp-config .row{align-items:end}@media(max-width:600px){header{padding:15px 20px}header .muted{display:none}main{padding:20px 14px}#mvp{padding:20px}.mvp-heading{align-items:start;flex-direction:column;margin-bottom:12px}#mvp h2{font-size:24px}.row button{flex-grow:1}}
+</style>
+<header><h1>◉ Bosque Escucha</h1><span class="muted">Centro local · sin Internet</span></header><main>
+<div id="login" class="card"><h2>Abre el centro desde el iniciador</h2><p>Haz doble clic en <strong>Iniciar MVP.command</strong>, en la carpeta hackTheAndes. Entrarás automáticamente.</p><details><summary>Acceso manual</summary><label>Token local <input id="token" type="password" autocomplete="off"></label> <button id="enter">Conectar</button></details><p class="muted">El acceso se conserva al recargar esta pestaña.</p></div>
+<div id="error" role="alert"></div><section id="app" hidden>
+<section id="mvp" class="card" hidden aria-label="Control del micrófono">
+<div class="mvp-heading"><h2>Prueba de sonido</h2><span id="mvp-device" class="device-pill">Buscando ESP32…</span></div>
+<p class="intro">Conecta la Mac al TP-Link y acerca el micrófono al altavoz.</p>
+<div class="row"><button id="mvp-start">Activar escucha</button><button id="mvp-stop">Detener escucha</button></div>
+<p id="mvp-status" role="status" aria-live="polite">Graba 3 segundos cada 5 segundos. Pulsa «Activar escucha» una vez.</p>
+<div id="mvp-result" aria-live="polite"></div>
+<details id="capture-details" hidden><summary>Escuchar grabación y ver análisis</summary><audio id="mvp-evidence" controls hidden></audio><div id="mvp-scores"></div></details>
+<div class="mvp-options">
+<details><summary>Prueba manual</summary><p class="muted">Úsala solo para comprobar el sonido reproducido por la Mac.</p><div class="row"><button id="mvp-test">Probar motosierra</button><button id="mvp-capture">Escuchar ahora</button></div></details>
+<details><summary>Configurar Wi-Fi</summary><p class="muted">Usa la misma red del TP-Link que la Mac.</p><form id="mvp-config"><div class="row"><label>Red 2,4 GHz<input id="wifi-ssid" required maxlength="32" autocomplete="off"></label><label>Contraseña<input id="wifi-password" type="password" maxlength="64" autocomplete="off"></label><button type="submit">Conectar ESP32</button></div></form><p id="mvp-network" class="muted"></p></details>
+</div><p class="footnote">Modo prueba · Guarda incidencias y activa la voz. No envía WhatsApp.</p>
+</section>
+<details class="center-details"><summary>Incidencias <span id="incident-count"></span></summary><div class="grid"><section><div id="list"></div></section><section><h2>Revisión</h2><div id="detail">Selecciona una incidencia.</div></section></div></details>
+<details class="center-details"><summary>Detalles del centro</summary>
+<div class="row"><button id="refresh">Actualizar</button></div>
+<h2>Nodos</h2><svg id="map" viewBox="0 0 800 160" aria-label="Plano local"></svg><div id="nodes"></div>
+<details><summary>Capturas</summary><div id="captures"></div></details>
+<details><summary>Notificaciones y cola</summary><div id="queue"></div></details>
+<details><summary>Historial</summary><div id="audit"></div></details>
+<details><summary>Simulaciones sin micrófono</summary><div class="row"><button id="demo">Crear demo combinada</button><button id="ambient">Demo ruido ambiente</button></div></details>
+</details></section></main>
 <script>
-let token='',data={},selected=null,urls=[];
+let token='',data={},selected=null,urls=[],watchedCapture=null,mvpBusy=false,captureAudioId=null,captureAudioURL=null,mvpAvailable=false;
 const el=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function api(path,method='GET',body){const r=await fetch(path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!r.ok){const e=await r.json();throw Error(e.detail||r.statusText)}return r.json()}
+const sessionKey='bosque.local.token';
+function storedToken(){try{return sessionStorage.getItem(sessionKey)||''}catch{return ''}}
+function rememberToken(value){try{if(value)sessionStorage.setItem(sessionKey,value);else sessionStorage.removeItem(sessionKey)}catch{}}
+async function api(path,method='GET',body){const r=await fetch(path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!r.ok){if(r.status===401){rememberToken('');token='';el('app').hidden=true;el('login').hidden=false;}const e=await r.json();throw Error(r.status===401?'Vuelve a abrir Iniciar MVP.command para entrar.':e.detail||r.statusText)}return r.json()}
 async function run(fn){try{el('error').textContent='';await fn()}catch(e){el('error').textContent=e.message}}
-async function refresh(){data=await api('/api/dashboard');el('app').hidden=false;el('login').hidden=true;
+async function refresh(){data=await api('/api/dashboard');rememberToken(token);el('app').hidden=false;el('login').hidden=true;el('incident-count').textContent='('+data.incidents.length+')';renderCapture();
 const mapped=data.nodes.filter(n=>n.latitude!=null&&n.longitude!=null);const lats=mapped.map(n=>n.latitude),lons=mapped.map(n=>n.longitude);el('map').innerHTML=mapped.length?mapped.map(n=>{const x=50+700*(n.longitude-Math.min(...lons))/(Math.max(...lons)-Math.min(...lons)||1),y=120-80*(n.latitude-Math.min(...lats))/(Math.max(...lats)-Math.min(...lats)||1);return `<circle cx="${x}" cy="${y}" r="7" fill="${n.status==='offline'?'#f89a8c':'#9bcf8c'}"/><text x="${x+12}" y="${y}" fill="#dfecdf" font-size="12">${escape(n.id)}</text>`}).join(''):'<text x="24" y="80" fill="#a0b9a7">Configura las coordenadas de los nodos para ubicarlos.</text>';
 el('nodes').innerHTML='<h2>Nodos · ubicación configurada manualmente</h2>'+data.nodes.map(n=>`<div class="card"><b>${escape(n.name)}</b> · ${escape(n.sector)} · ${n.status==='offline'?'🔴 Desconectado':'🟢 '+escape(n.status)}<p class="muted">${n.id.startsWith('DEMO')?'DEMO · ':''}${n.latitude==null?'Coordenadas pendientes':escape(n.latitude)+', '+escape(n.longitude)} · Último contacto: ${escape(n.last_seen)}</p></div>`).join('');
 el('list').innerHTML=data.incidents.slice().reverse().map(i=>`<button class="card" style="display:block;width:100%;text-align:left" data-id="${escape(i.id)}"><b class="${escape(i.priority)}">${escape(i.priority.toUpperCase())}</b> · ${escape(i.node_id)}<p>${escape(i.summary)}</p><span class="muted">${escape(i.status)} · ${escape(i.created_at)}</span></button>`).join('')||'<p>Aún no hay incidentes.</p>';
 el('list').querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>run(()=>detail(b.dataset.id)));
-el('captures').innerHTML=(data.captures||[]).slice().reverse().map(c=>`<div class="card"><b>${escape(c.node_id)}</b> · ${escape(c.type)} · ${escape(c.analysis_status)}<p>${escape(c.analysis_error||('Detecciones: '+c.detections))}</p><small>${escape(c.created_at)}</small></div>`).join('')||'<p>Sin capturas crudas.</p>';
+el('captures').innerHTML=(data.captures||[]).slice().reverse().map(c=>`<div class="card"><b>${escape(c.node_id)}</b> · ${escape(c.type)} · ${escape(c.analysis_status)}<p>${escape(c.analysis_error||(c.analysis_status==='complete'?(c.detections?'Sonido objetivo detectado. Revisa las incidencias.':'Análisis terminado: sin motosierra ni pasos sobre el umbral.'):'Analizando audio…'))}</p><small>${escape(c.created_at)}</small></div>`).join('')||'<p>Sin capturas crudas.</p>';
 el('queue').innerHTML=data.notifications.map(n=>`<div class="card">WhatsApp · ${escape(n.status)} · ${escape(n.id)}<p>${escape(n.last_error||'La aceptación del webhook no confirma entrega ni atención.')}</p></div>`).join('')+'<pre>'+escape(JSON.stringify(data.jobs,null,2))+'</pre>';
 el('audit').innerHTML=data.audit.slice(-15).reverse().map(a=>`<p>${escape(a.created_at)} · ${escape(a.action)} · ${escape(a.actor)}</p>`).join('');if(selected)await detail(selected)}
 async function detail(id){selected=id;urls.forEach(URL.revokeObjectURL);urls=[];const i=data.incidents.find(i=>i.id===id);if(!i)return;
@@ -22,5 +48,54 @@ el('detail').innerHTML=`<div class="card"><b>${escape(i.id)}</b><p>${escape(i.su
 const change=body=>run(async()=>{await api('/api/incidents/'+id,'PATCH',{...body,review_note:el('note').value});await refresh()});
 el('verify').onclick=()=>change({status:'verified'});el('discard').onclick=()=>change({status:'discarded'});el('close').onclick=()=>change({status:'closed'});el('assign').onclick=()=>{const contact=prompt('Contacto acordado: teléfono en formato internacional o ID del contacto');if(contact)change({status:'assigned',assigned_to:contact})};el('change').onclick=()=>change({priority:el('priority').value});el('notify').onclick=()=>run(async()=>{await api('/api/incidents/'+id+'/notify','POST',{approved:true});await refresh()});
 for(const e of events){const box=document.createElement('div');box.className='card';box.innerHTML=`<b>${escape(e.event_type)}</b> · score ${escape(e.confidence)} · ${escape(e.source)}<p>${escape(e.detected_at)}</p><p class="muted">Score del modelo, no probabilidad calibrada. ${e.persistent?'Señal persistente.':''}</p>`;el('evidences').appendChild(box);if(e.evidence_path){const r=await fetch('/api/evidence?path='+encodeURIComponent(e.evidence_path),{headers:{Authorization:'Bearer '+token}});if(r.ok){const url=URL.createObjectURL(await r.blob());urls.push(url);const media=document.createElement(e.evidence_type==='audio'?'audio':'img');media.src=url;if(e.evidence_type==='audio')media.controls=true;else media.alt='Evidencia del nodo';box.appendChild(media)}}}}
-el('enter').onclick=()=>run(async()=>{token=el('token').value;el('token').value='';await refresh()});el('refresh').onclick=()=>run(refresh);el('demo').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'combined'});await refresh()});el('ambient').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'ambient'});await refresh()});setInterval(()=>{if(token&&!document.activeElement.matches('input,select')&&!selected)run(refresh)},10000);
+el('enter').onclick=()=>run(async()=>{token=el('token').value;el('token').value='';await refresh();await setupMvp()});el('refresh').onclick=()=>run(refresh);el('demo').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'combined'});await refresh()});el('ambient').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'ambient'});await refresh()});
+
+async function setupMvp(){
+  if(!['127.0.0.1','localhost','[::1]'].includes(location.hostname))return;
+  try{const state=await api('/api/mvp/status');mvpAvailable=true;el('mvp').hidden=false;el('mvp-device').textContent=state.ports.length?'ESP32 · USB':'Conecta el ESP32';el('mvp-network').textContent='IP de la Mac: '+(state.ip||'sin conexión');}catch(e){el('error').textContent=e.message}
+}
+function renderCapture(){
+  const captures=data.captures||[];
+  const c=watchedCapture?captures.find(v=>v.id===watchedCapture):captures.filter(v=>v.node_id==='DEMO-ESP32-WIFI').at(-1);
+  if(!c)return;
+  if(watchedCapture===c.id&&!mvpBusy&&['complete','failed','blocked'].includes(c.analysis_status))el('mvp-status').textContent=c.analysis_status==='complete'?'Prueba terminada.':'Revisa el error de análisis.';
+  let result=c.analysis_status==='complete'?(c.detections?'Sonido detectado. Revisa las incidencias.':'Sin sonido de riesgo detectado.'):(c.analysis_error||'Analizando audio…');
+  if(c.analysis_summary?.persistent)result='Motosierra detectada · Incidencia registrada.';
+  const info=c.analysis_summary;
+  el('mvp-result').innerHTML='<p class="capture-time">Última captura · '+escape(new Date(c.created_at).toLocaleTimeString())+'</p><p class="result-text">'+escape(result)+'</p>';
+  el('capture-details').hidden=false;
+  el('mvp-scores').textContent=info?'Sonido principal: '+(info.top[0]?.label||'—')+' · Motosierra: '+info.chainsaw_score.toFixed(3)+' / umbral '+info.threshold.toFixed(2)+'. Puntaje del modelo; no es una probabilidad.':'';
+  if(captureAudioId!==c.id){captureAudioId=c.id;el('mvp-evidence').hidden=true;void fetch('/api/evidence?path='+encodeURIComponent(c.path),{headers:{Authorization:'Bearer '+token}}).then(async r=>{if(!r.ok)return;const blob=await r.blob();if(captureAudioId!==c.id)return;if(captureAudioURL)URL.revokeObjectURL(captureAudioURL);captureAudioURL=URL.createObjectURL(blob);el('mvp-evidence').src=captureAudioURL;el('mvp-evidence').hidden=false;}).catch(()=>{});}
+}
+function conciseStatus(message){
+ if(message.includes('Mac y el ESP32 deben'))return 'Conecta la Mac al TP-Link. Si ya está conectada, revisa «Configurar Wi-Fi».';
+ if(message.includes('monitor serial de Arduino'))return 'Cierra el monitor de Arduino y vuelve a intentar.';
+ if(message.startsWith('Escucha activa'))return 'Escucha activa · 3 segundos cada 5 segundos.';
+ if(message.startsWith('Audio enviado'))return 'Audio recibido. Analizando…';
+ if(message.startsWith('ESP32 conectado al Wi-Fi'))return 'ESP32 conectado. Ya puedes probar.';
+ return message;
+}
+async function mvpAction(action){
+  if(mvpBusy)return;
+  mvpBusy=true;watchedCapture=null;el('mvp-status').textContent=action==='test'?'Comprobando conexión. Después sonará la motosierra…':action==='capture'?'Comprobando conexión y grabando…':'Aplicando cambio…';
+  el('mvp').querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{const result=await api('/api/mvp/action','POST',{action});watchedCapture=result.capture_id||null;el('mvp-status').textContent=conciseStatus(result.message);await refresh();}catch(e){el('mvp-status').textContent=conciseStatus(e.message);}finally{mvpBusy=false;el('mvp').querySelectorAll('button').forEach(b=>b.disabled=false);}
+}
+for(const action of ['test','capture','start','stop'])el('mvp-'+action).onclick=()=>mvpAction(action);
+el('mvp-config').onsubmit=async e=>{
+ e.preventDefault();if(mvpBusy)return;mvpBusy=true;el('mvp-status').textContent='Conectando el ESP32 al Wi-Fi…';el('mvp').querySelectorAll('button').forEach(b=>b.disabled=true);
+ try{const result=await api('/api/mvp/configure','POST',{ssid:el('wifi-ssid').value,password:el('wifi-password').value});el('mvp-status').textContent=conciseStatus(result.message);await setupMvp();}catch(error){el('mvp-status').textContent=conciseStatus(error.message);}finally{el('wifi-password').value='';mvpBusy=false;el('mvp').querySelectorAll('button').forEach(b=>b.disabled=false);}
+};
+const initialToken=new URLSearchParams(location.hash.slice(1)).get('token');
+if(initialToken)history.replaceState(null,'',location.pathname+location.search);
+token=initialToken||storedToken();
+void run(async()=>{
+  if(['127.0.0.1','localhost','[::1]'].includes(location.hostname)){
+    const response=await fetch('/api/local-session');
+    if(response.ok)token=(await response.json()).token;
+  }
+  if(token){await refresh();await setupMvp();}
+});
+setInterval(()=>{if(token&&!mvpBusy)void run(async()=>{if(selected||document.activeElement.matches('input,select')){data=await api('/api/dashboard');renderCapture();}else await refresh();if(mvpAvailable)await setupMvp();});},3000);
+
 </script></html>

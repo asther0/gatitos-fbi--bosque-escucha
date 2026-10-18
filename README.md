@@ -1,177 +1,171 @@
-# greenear
+# greenear · Bosque Escucha
 
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=black)
-![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
-![ESP32](https://img.shields.io/badge/ESP32-E7352C?logo=espressif&logoColor=white)
-![TensorFlow](https://img.shields.io/badge/TensorFlow_·_YAMNet-FF6F00?logo=tensorflow&logoColor=white)
-![YOLO11n](https://img.shields.io/badge/YOLO11n-111F68)
-![Leaflet](https://img.shields.io/badge/Leaflet_·_OpenStreetMap-199900?logo=leaflet&logoColor=white)
+**Un micrófono en el territorio, evidencia en el centro de comando y revisión humana antes de avisar por WhatsApp.**
 
-**Vigilancia del bosque con evidencia acústica y visual, revisión humana y coordinación de inspecciones.**
-Hack the Andes 2026 · Clima y Territorio
+MVP de Hack the Andes 2026 · Clima y Territorio. Estado documentado: **18 de octubre de 2026**.
 
-| Entrega | Enlace / estado |
+[Producto público](https://bosque-escucha.vercel.app) · [Landing y presentación](https://bosque-escucha-landing.vercel.app) · [Issues y próximos pasos](https://github.com/asther0/gatitos-fbi--bosque-escucha/issues)
+
+La entrega del equipo **gatitos_fbi** quedó registrada por el CLI del concurso el 18 de octubre a las **08:58:43, hora de Lima**, con la landing como presentación.
+
+## Qué tenemos
+
+El montaje actual utiliza **un ESP32 DevKit con un micrófono INMP441**. Captura audio y lo envía por Wi-Fi a una Mac mediante un router TP-Link. La Mac ejecuta YAMNet, guarda la grabación y registra indicios compatibles con motosierra. Una detección persistente crea una incidencia y solicita una alerta hablada con la voz **Paulina de macOS**.
+
+El centro web permite revisar evidencia privada, priorizar, asignar y cerrar incidencias. Al recuperar Internet, el centro local sincroniza con Supabase. La integración **n8n → Kapso → WhatsApp** cuenta con simulacros autorizados cuya entrega fue confirmada por callback firmado.
+
+La IA se ejecuta en la laptop, **no en el ESP32**. La cámara ESP32-CAM quedó fuera de esta demostración. El código de visión y el receptor USB BESC se conservan como trabajo previo, pero no forman parte del recorrido físico actual. La voz local no usa ElevenLabs.
+
+## Probar el MVP físico
+
+En la Mac ya preparada, con modelos y muestra de sonido instalados:
+
+1. Conecta el ESP32 por USB y cierra el monitor serial de Arduino.
+2. Conecta la Mac a **TP-Link_275C**. El ESP32 debe estar en la misma red de 2,4 GHz. El aviso «Sin Internet» es compatible con esta prueba local.
+3. Abre **[Iniciar MVP.command](Iniciar%20MVP.command)** con doble clic y deja su ventana abierta. Abre el panel en `http://127.0.0.1:8765` con acceso automático.
+4. Acerca el micrófono al altavoz de la Mac y pulsa **Probar motosierra**. El botón reproduce la muestra y ordena una captura física; el audio grabado viaja por Wi-Fi.
+5. Revisa la hora y el resultado. Abre **Escuchar grabación y ver análisis** para comprobar la evidencia; las incidencias están en **Incidencias**.
+6. Para un control sin la muestra, pulsa **Escuchar ahora**. Para muestreo periódico, abre **Escucha automática** y pulsa **Activar escucha**.
+
+La escucha automática toma **clips de 3 segundos cada 5 segundos**; no es continua. USB proporciona alimentación y comandos de configuración/control en esta demo. El transporte del audio al centro es Wi-Fi.
+
+El panel actualiza el destino del ESP32 si cambia la IP de la Mac y ambos están en la misma subred. Espera hasta 12 segundos si la Mac todavía no tiene una IP válida. Si continúa el error: **Ajustes → Wi-Fi → TP-Link → Detalles → TCP/IP → Renovar concesión DHCP**. La primera configuración de red y clave está en **Configurar Wi-Fi**.
+
+El iniciador utiliza el entorno Python instalado; no descarga modelos ni muestras. Para preparar otra máquina, consultar la [guía del centro local](local-center/README.md) y el [firmware Wi-Fi](firmware/mic_wifi/README.md).
+
+### Conexión del micrófono
+
+En esta placa las etiquetas `D25`, `D26` y `D33` corresponden a GPIO 25, 26 y 33.
+
+| INMP441 | ESP32 DevKit |
 | --- | --- |
-| Landing | **[Conocer greenear](https://bosque-escucha-landing.vercel.app)** |
-| Producto público | **[Abrir greenear](https://bosque-escucha.vercel.app)** |
-| Presentación | **Pendiente:** publicar y agregar URL |
-| Validación técnica | [Resultados y límites de las pruebas](docs/VALIDACION.md) |
-| Especificación | [PRD en Markdown](docs/Bosque_Escucha_PRD_MVP.md) |
+| VDD | 3V3 |
+| GND | GND |
+| L/R | GND |
+| SCK | D25 |
+| WS | D26 |
+| SD | D33 |
 
-## Problema y usuario
+## Qué se verificó
 
-Pensado para guardaparques, vigilantes comunitarios y responsables de conservación que necesitan revisar indicios de actividad en el bosque y decidir dónde inspeccionar. Un sonido aislado no basta para interpretar lo que ocurre: el operador necesita contexto, evidencia y un registro de su decisión.
+Las tres capturas del **18/10/2026** se recibieron bajo el nodo `DEMO-ESP32-WIFI`. Son WAV mono de 2 segundos a 16 kHz. Se reejecutó YAMNet sobre los archivos guardados y se reprodujeron los mismos puntajes y estados de persistencia, sin crear eventos adicionales.
 
-greenear reúne audio e imágenes de nodos de campo, propone una prioridad y permite que una persona revise la evidencia antes de coordinar una respuesta. **La validación con usuarios reales del territorio está pendiente.**
+| Hora de Lima | Puntaje de motosierra | Resultado guardado |
+| --- | --- | --- |
+| 09:04:55 | 0.926743 | Detección persistente; incidencia de prioridad media. |
+| 09:05:24 | 0.0000246 | Sin detección objetivo; clase principal Speech. |
+| 09:05:35 | 0.832134 | Detección sin persistencia; evento asociado a la incidencia existente. |
 
-## Cómo funciona
+El umbral configurado es **0.65**. La persistencia exige **tres ventanas consecutivas dentro del mismo clip**. Los scores son salidas del modelo, no porcentajes de precisión. Estas pruebas respaldan el recorrido de laboratorio con audio reproducido y captado por el micrófono; no miden desempeño en bosque ni validan detección de pasos o incendios.
 
-1. Un nodo con cámara y micrófono captura evidencia en el bosque.
-2. El centro local conserva archivos y eventos; YAMNet analiza audio y YOLO11n busca personas en imágenes.
-3. Las reglas relacionan indicios del mismo nodo para proponer una prioridad de revisión.
-4. El operador escucha, observa, revisa el incidente y registra su decisión.
-5. Con Internet, el centro sincroniza datos y evidencias con la web pública. Los datos operativos requieren acceso de operador.
-6. Tras aprobación humana, una cola prepara la notificación. **La conexión externa n8n/WhatsApp está pendiente.**
+La incidencia local de esta prueba es `24085534-9d1a-43a4-9185-a75ec00a172a`. Se comprobó su presencia en `localhost:3000` y en Supabase del despliegue público. Hay que activar **Ver datos de prueba**: la vista operativa oculta IDs `DEMO-*`. La ficha muestra las dos grabaciones asociadas. El disparo de voz está implementado; el registro de una detección no acredita por sí solo que el altavoz haya sido audible.
 
-Este es el flujo previsto del MVP. El tramo físico completo desde el nodo todavía no está validado; el estado de cada parte se detalla abajo.
-
-## Probar desde la URL pública
-
-Abrir **https://bosque-escucha.vercel.app**. La vista pública ofrece una **DEMO interactiva sin contraseña**. Pulsa **Probar el flujo** para revisar un incidente, cambiar prioridad, asignar, cerrar y simular una aprobación. Las decisiones quedan en la memoria del navegador y se reinician al recargar; no modifican operaciones reales ni envían mensajes. Los escenarios no incluyen capturas reales.
-
-En el mapa, **Mi ubicación** solicita permiso al navegador y muestra tu posición con su margen de precisión. La posición se mantiene en el navegador y no se guarda como ubicación de un nodo.
-
-Para revisar datos operativos y modificar incidentes reales se necesita la contraseña de operador, compartida por el equipo de forma privada. No se publica en este repositorio. La dirección `127.0.0.1:8765` corresponde al servicio de la laptop que procesa las capturas; **el enlace de entrega al jurado es la URL pública de Vercel**.
-
-### Guion de demo · 3 minutos + 2 de preguntas
-
-| Tiempo | Qué mostrar |
+| Componente | Evidencia disponible |
 | --- | --- |
-| 0:00–0:30 · Problema | Para quién se construye y qué decisión facilita: revisar evidencia y priorizar una inspección. |
-| 0:30–2:30 · Producto en vivo | Abrir la URL pública, mostrar un incidente y su evidencia; probar una decisión simulada sin contraseña, o usar acceso de operador para un incidente real. Identificar cualquier dato sintético como DEMO. |
-| 2:30–3:00 · Arquitectura | Explicar procesamiento local, persistencia offline, sincronización y revisión humana. Indicar qué integraciones siguen pendientes. |
-| 3:00–5:00 · Preguntas | Responder sobre límites de los modelos, conectividad, privacidad y validación de campo. |
+| ESP32 + INMP441 | Captura física y recepción HTTP por TP-Link; firmware Wi-Fi protocolo 2 cargado. |
+| Centro local | Panel con botones, WAV privado, análisis, SQLite, incidencia y cola de sincronización. |
+| Centro web + Supabase | Incidencia del micrófono sincronizada; revisión humana y evidencia privada. |
+| Mapa | Nodos con coordenadas; geolocalización del navegador y capa de puntos simulados. |
+| Asistente n8n | Webhook autenticado y respuesta real de GPT-4o-mini verificadas; [reporte](integrations/n8n/live-assistant/REPORT.md). |
+| WhatsApp | Dos simulacros autorizados entregados mediante n8n/Kapso; [registro técnico](integrations/n8n/KAPSO.md). |
+| Pruebas de controles locales | Ocho pruebas de autorización, coordinación captura/reproducción, cambio de IP y espera DHCP. Serial simulado, separado de las pruebas físicas. |
 
-**Pendiente antes de presentar:** preparar un incidente con evidencia reproducible, ensayar el recorrido completo desde la URL pública. La captura física en vivo depende de resolver el enlace USB e integrar el nodo.
+## Dónde ver la incidencia y cuándo llega WhatsApp
+
+| Interfaz | Fuente de datos y conectividad |
+| --- | --- |
+| `127.0.0.1:8765` | Centro FastAPI de la Mac: capturas e incidencias locales, disponible sin Internet. |
+| `localhost:3000` | Centro web Next.js de desarrollo: consulta Supabase; requiere Internet para datos cloud. |
+| [Centro publicado](https://bosque-escucha.vercel.app) | Centro web desplegado: datos de Supabase con acceso de operador. |
+
+En el centro web, entra como operador y activa **Ver simulaciones** para incluir `DEMO-ESP32-WIFI`. La vista operativa lo oculta por defecto. El nodo de esta prueba todavía no tiene coordenadas registradas: una incidencia sincronizada no basta para dibujarlo en el mapa. **Mi ubicación** muestra la posición del navegador; no la asigna automáticamente al sensor. Registrar y validar la posición del dispositivo antes de usar el mapa como referencia territorial. Los cinco puntos simulados representan otras zonas de escucha, no dispositivos físicos adicionales.
+
+Los nodos `DEMO-*` **bloquean WhatsApp externo**. La detección local y la sincronización actual no envían mensajes automáticamente. La cola offline que existe reintenta la sincronización de evidencia e incidencias; no almacena una orden de WhatsApp ni la despacha al volver Internet. El circuito de envío cloud requiere incidencia revisada, contacto autorizado del sector y aprobación de envío. El recibo `delivered` confirma entrega del proveedor; la atención de una persona se registra por separado. Para encolar notificaciones en la Mac y despacharlas de forma segura al reconectar, seguir [este issue](https://github.com/asther0/gatitos-fbi--bosque-escucha/issues/8).
+
+Los simulacros de Kapso usaron contactos temporales que después se desactivaron. El proveedor vigente es Kapso; Zavu corresponde al intento anterior. La preparación del uso operativo se sigue en [el issue de WhatsApp](https://github.com/asther0/gatitos-fbi--bosque-escucha/issues/4).
+
+## Explorar la entrega pública
+
+Abre **[greenear](https://bosque-escucha.vercel.app)** y pulsa **Probar el flujo**. La demo pública no requiere contraseña: permite explorar incidentes y simular decisiones en la memoria del navegador. No modifica operaciones reales ni envía mensajes. Los datos operativos requieren la contraseña de operador, compartida por el equipo de forma privada.
+
+La **[landing](https://bosque-escucha-landing.vercel.app)** sirve como presentación: explica el problema, muestra la plataforma y recoge conversaciones iniciales sobre la propuesta. Esas conversaciones no acreditan uso sostenido ni impacto medido en campo.
 
 ### Capturas del producto
 
-**Pendiente:** agregar capturas reales del panorama con mapa, del detalle de un incidente con evidencia y de la decisión del operador. Deben ocultar secretos y datos personales, e identificar los datos DEMO. Las capturas acompañarán la explicación; la entrega incluye el producto funcionando desde su URL.
+Capturas reales de la interfaz pública con **datos sintéticos DEMO**; no representan detecciones de campo. [Procedencia](landing/capturas/LEEME.md).
 
-## Estado real del MVP
+![Panorama del centro de comando con datos DEMO](landing/capturas/panorama.png)
 
-| Componente | Estado y evidencia |
-| --- | --- |
-| Centro web y Supabase | Desplegados; build, acceso a BD y smoke de API en producción verificados. |
-| Incidentes y revisión humana | Persistencia, correlación, cambios de estado y conservación de prioridad humana verificados por API. |
-| Evidencia privada | Subida, deduplicación y recuperación de WAV de control verificadas; acceso anónimo denegado. |
-| Mapa | OpenStreetMap verificado en producción; plano esquemático disponible como respaldo. |
-| Centro local y sincronización | WAV de control procesado y sincronizado a Storage; reconexión probada con nube simulada. |
-| IA local | YAMNet y YOLO11n ejecutados con silencio e imagen negra. **Pendientes:** muestras positivas, precisión y calibración en campo. |
-| Receptor ESP32 | Firmware compilado y cargado con hashes verificados. **Bloqueado:** datos USB corruptos a 921600 baudios; Wi-Fi sin confirmación. |
-| Nodo con cámara y micrófono | **Pendiente:** integrar y medir capturas reales con el módulo de Bill. |
-| Notificación externa | Cola y estados implementados. **Pendiente:** conectar n8n/proveedor WhatsApp y comprobar entrega. No se enviaron mensajes externos. |
+[Lista de incidentes](landing/capturas/incidentes.png) · [Detalle de una incidencia](landing/capturas/ficha-incidente.png)
 
-Detalles: [validación del software](docs/VALIDACION.md) · [validación física del receptor](firmware/VALIDATION.md).
-
-## Evidencia de uso, impacto y tracción
-
-**Todavía no se presenta evidencia de uso externo al equipo ni de tracción.** Los registros DEMO y las pruebas automáticas son controles técnicos.
-
-| Evidencia por incorporar | Estado |
-| --- | --- |
-| Usuario real del territorio: rol, necesidad y feedback autorizado | **Pendiente** |
-| Personas externas que completaron una tarea: fecha, tarea y registro verificable | **Pendiente** |
-| Uso repetido: sesiones o tareas en distintas ocasiones | **Pendiente** |
-| Lista de espera real o pago, si existe | **Pendiente** |
-| Impacto medido: tiempo captura → revisión y utilidad para decidir una inspección | **Pendiente** |
-| Veinte ensayos variados del PRD y resultados, incluidos fallos | **Pendiente** |
-
-## Arquitectura y decisiones técnicas
+## Arquitectura
 
 ```mermaid
 flowchart TD
-    N["Nodo ESP32-CAM + micrófono"] --> W["Wi-Fi 2,4 GHz · router"]
-    W --> R["ESP32 receptor USB"]
-    R --> L["Centro local · FastAPI + SQLite + archivos"]
-    L --> IA["YAMNet audio · YOLO11n imágenes"]
-    IA --> L
-    L -->|Sincronización con Internet| C["API Next.js · Vercel"]
-    C <--> S["Supabase · BD con RLS + Storage privado"]
-    C <--> UI["Centro web · revisión humana"]
-    UI --> Q["Cola de notificaciones aprobadas"]
-    Q -. Integración pendiente .-> P["n8n / proveedor WhatsApp"]
+    M["INMP441 · un micrófono"] --> E["ESP32 DevKit"]
+    E -->|"Audio por Wi-Fi 2,4 GHz"| T["TP-Link · LAN"]
+    T --> L["Mac · FastAPI + SQLite + WAV"]
+    L -. "Control y configuración por USB" .-> E
+    L --> A["YAMNet en CPU"]
+    A --> I["Evento e incidencia local"]
+    I -->|"Motosierra persistente"| V["Voz Paulina en la Mac"]
+    L -->|"Sincronización con Internet"| C["API Next.js + Supabase privado"]
+    C --> U["Centro web · revisión humana"]
+    U -->|"Aprobación + contacto operativo"| N["n8n"]
+    N --> K["Adaptador Kapso · WhatsApp"]
+    K -->|"Callback firmado"| C
 ```
 
-- **Procesamiento local:** permite conservar y analizar capturas sin WAN; requiere una laptop encendida y modelos instalados. El corte físico de WAN está pendiente de ensayo.
-- **Sincronización con UUID estables:** reintentos sin duplicar eventos; archivos privados y cola persistente.
-- **Revisión humana:** los modelos aportan indicios. Sus scores no son probabilidades calibradas de ilegalidad; no se envían alertas externas sin aprobación.
-- **Acceso separado:** vista pública DEMO y sesión de operador para datos reales. El MVP utiliza una contraseña compartida; cuentas individuales y permisos por rol quedan pendientes.
-- **Mapa por nodo:** las coordenadas muestran la ubicación registrada del dispositivo; no localizan con precisión una persona o una motosierra. La cartografía necesita Internet.
+El centro local conserva evidencia y tareas en disco. La sincronización usa UUID estables y almacenamiento privado. Las capturas fallidas no se almacenan en el ESP32 para reintento. Cloud, cartografía externa y WhatsApp requieren Internet; análisis y revisión locales no lo requieren una vez instalados los modelos.
 
-## Guía del repositorio y ejecución
+Los modelos aportan indicios para revisar; no identifican a una persona ni determinan ilegalidad. El acceso actual usa una contraseña compartida de operador y las evidencias se conservan sin borrado automático. El trabajo de piloto, calibración, retención y accesos se gestiona en [GitHub Issues](https://github.com/asther0/gatitos-fbi--bosque-escucha/issues).
 
-### Ejecutar web
+## Desarrollo
 
-Requiere Node.js 22 o posterior. En Vercel se utiliza Node.js 24.
+Stack: **ESP32 / Arduino, INMP441, Python 3.11, FastAPI, TensorFlow/YAMNet, SQLite, Next.js 16, React 19, TypeScript, Supabase, Vercel, n8n y Kapso**.
+
+### Ejecutar la web
+
+Requiere Node.js 22 o posterior; el despliegue utiliza Node.js 24.
 
 ```bash
 npm ci
+# Solo en una instalación nueva, si no existe .env.local:
 cp .env.example .env.local
-# Completar variables privadas del servidor.
+# Completar las variables privadas del servidor.
 npm run dev
 ```
 
-En esta laptop `.env.local` ya está configurado y excluido de Git: **no sobrescribirlo**. El acceso de operador usa `OPERATOR_PASSWORD`; ningún secreto de Supabase se envía al navegador. No hace falta una API key de OpenStreetMap. La cartografía necesita Internet; ante un fallo se ofrece un plano esquemático local.
+En la Mac del equipo `.env.local` ya está configurado y excluido de Git: **no sobrescribirlo**. Las credenciales de operador, Supabase y proveedores no deben publicarse. Las migraciones están en `supabase/migrations/`; las tablas usan RLS y la evidencia un bucket privado.
 
-Las migraciones SQL están en `supabase/migrations/`. Habilitan RLS sin acceso anónimo a las tablas y crean un bucket privado. La API controla lectura y escritura. No existe registro público de operadores.
-
-### Centro local
-
-Consultar [guía del centro local](local-center/README.md) para ejecutar FastAPI, preparar modelos y probar offline. `python local-center/run.py --cloud-url https://bosque-escucha.vercel.app` carga las variables del servidor desde `.env.local`, si las dependencias están instaladas.
-
-Los eventos y archivos se conservan en SQLite/disco. La sincronización registra nodos, sube evidencias y replica snapshots con UUID estables. La cola sobrevive a reinicios. Inferencia y transporte físico deben verificarse con las capturas reales de Bill; las demostraciones sintéticas siempre están marcadas.
-
-### Módulos
-
-| Módulo | Ruta |
-| --- | --- |
-| Centro de comando, mapa y revisión | `components/`, `app/` |
-| API, autorización y procesamiento | `app/api/`, `lib/` |
-| Base de datos y reglas transaccionales | `supabase/migrations/` |
-| Ingesta, evidencia, IA y cola offline | `local-center/` |
-| Receptor ESP32, protocolo BESC y puente USB | [firmware/README.md](firmware/README.md) |
-| Contrato de dispositivo, sync y notificaciones | [docs/API.md](docs/API.md) |
-| Sponsors y decisiones de herramientas | [docs/SPONSORS.md](docs/SPONSORS.md) |
-
-### Verificación rápida
+### Verificación de software
 
 ```bash
 npm run typecheck
-npm run build
 npm run test:unit
-# Contra un servidor en ejecución; genera únicamente registros DEMO:
-node scripts/smoke-cloud.mjs
-# O contra el despliegue público:
-SMOKE_BASE_URL=https://bosque-escucha.vercel.app node scripts/smoke-cloud.mjs
+npm run build
+# Con el entorno Python del centro activado:
+python -m unittest discover -s local-center -p test_mvp_controls.py
+python local-center/smoke.py
+python local-center/smoke_sync.py
+python local-center/smoke_demo_guard.py
 ```
 
-Los smoke locales usan SQLite temporal y una nube simulada: `python local-center/smoke.py` y `python local-center/smoke_sync.py`. No hay suite e2e de navegador. Las pruebas incluyen persistencia Supabase, idempotencia, correlación, conservación de prioridad humana, estados, aislamiento público y reproducción privada de WAV.
+Los smoke locales usan datos temporales y servicios simulados. No acreditan entrega WhatsApp ni sensibilidad acústica. Para el smoke cloud, `node scripts/smoke-cloud.mjs` genera registros DEMO contra el servidor configurado.
 
-## Pendientes antes del piloto y la entrega
+### Módulos y documentación
 
-- [ ] Resolver el transporte USB del receptor, confirmar Wi-Fi e integrar cámara/micrófono.
-- [ ] Validar capturas positivas, latencia y veinte ensayos variados.
-- [ ] Probar corte real de WAN con el router encendido y sincronización posterior.
-- [ ] Configurar n8n, proveedor WhatsApp y destinatario acordado; verificar entrega y confirmación humana por separado.
-- [ ] Incorporar evidencia de usuarios externos y tracción, cuando exista.
-- [ ] Publicar URL de presentación y agregar capturas reales del producto.
-- [ ] Ensayar la demo de tres minutos desde la URL pública.
-- [ ] Definir retención y accesos antes de capturar personas en campo.
+| Módulo | Ruta |
+| --- | --- |
+| Inicio con un clic | [Iniciar MVP.command](Iniciar%20MVP.command) |
+| Panel, ingesta, IA, evidencia y cola local | [local-center/](local-center/) |
+| Firmware del montaje actual | [firmware/mic_wifi/](firmware/mic_wifi/) |
+| Centro de comando y mapa | `components/`, `app/` |
+| API, autorización y notificaciones | `app/api/`, `lib/` |
+| Base de datos | `supabase/migrations/` |
+| n8n y WhatsApp | [Integraciones](integrations/n8n/README.md) · [Kapso](integrations/n8n/KAPSO.md) |
+| Contrato de API | [docs/API.md](docs/API.md) |
+| Diseño original e historial de validación | [PRD](docs/Bosque_Escucha_PRD_MVP.md) · [Validación histórica](docs/VALIDACION.md) |
+| Herramientas y sponsors | [docs/SPONSORS.md](docs/SPONSORS.md) |
 
-La interfaz permite reintentar la cola de notificaciones explícitamente. No se afirma un servicio programado de reintentos cloud hasta configurar su disparador. Las herramientas y créditos disponibles se documentan en [Sponsors](docs/SPONSORS.md); su disponibilidad no implica integración activa.
+El PRD y las validaciones del 17 de octubre describen etapas anteriores. Este README resume el montaje y las pruebas del 18 de octubre; los próximos pasos están organizados en issues.

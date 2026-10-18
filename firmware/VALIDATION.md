@@ -1,5 +1,13 @@
 # Validación del receptor · 2026-10-17
 
+## Prueba del micrófono · 2026-10-18
+
+El ESP32 receptor, ahora en `/dev/cu.usbserial-130` y con la misma MAC `b4:bf:e9:61:cf:e4`, se conectó a un INMP441: D25→SCK, D26→WS, D33→SD, 3V3→VDD y GND→GND/L/R. Antes de la prueba se respaldó su aplicación exacta (`0x10000`, `0xE0000` bytes) y NVS/OTA (`0x9000`, `0x7000` bytes) en `~/.bosque-escucha/backups/receiver-mic-test-20261018/`. Ambos respaldos se leyeron a 115200 sin error; la prueba se escribió solo en `0x10000` y esptool verificó el hash. El firmware receptor queda **temporalmente reemplazado** por `firmware/mic_test/mic_test.ino`.
+
+La prueba I²S a 16 kHz inició y entregó unas 8192 muestras por ventana de 0,5 segundos; casi todas fueron distintas de cero. El RMS observado en fondo fue aproximadamente 300–500 ppm de escala completa y hubo ventanas transitorias de 1013–1954 ppm. La lectura digital está activa y varía.
+
+Después se añadió `firmware/mic_test/record.py`, que captura dos segundos, ajusta el volumen y guarda WAV mono de 16 bits a 16 kHz. Se verificó un archivo de control válido de 32 000 muestras. El usuario ejecutó la grabación y confirmó que **el audio se escucha**. El micrófono queda validado como entrada de audio física; el firmware de diagnóstico sigue cargado, por lo que el receptor BESC aún no está activo.
+
 ## Compilación y pruebas
 
 - Chip físico: ESP32-D0WD-V3 revisión3.1; flash4MiB; crystal40MHz; MAC `b4:bf:e9:61:cf:e4`; puerto `/dev/cu.usbserial-1140`.

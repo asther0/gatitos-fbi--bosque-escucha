@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Cloud,
   CloudOff,
-  Eye,
   FileImage,
   LayoutDashboard,
   Leaf,
@@ -60,6 +59,7 @@ export default function Home() {
     [assignee, setAssignee] = useState(""),
     [filter, setFilter] = useState("all"),
     [date, setDate] = useState("");
+  const [includeTests, setIncludeTests] = useState(false);
   const demoState = useRef<Dashboard | null>(null);
   const refresh = useCallback(async () => {
     try {
@@ -67,13 +67,16 @@ export default function Home() {
       const body = await res.json();
       if (!res.ok) throw Error(body.error || "No se pudo sincronizar");
       if (body.authenticated) {
-        const testNode = (id: string) => id.startsWith("DEMO") || id === "CHECK-LOCAL";
-        const events = body.events.filter((e: ForestEvent) => !testNode(e.node_id) && e.source !== "demo" && !e.metadata?.synthetic_control);
-        const incidents = body.incidents.filter((i: Incident) => !testNode(i.node_id));
-        const ids = new Set(incidents.map((i: Incident) => i.id));
-        setData({...body, nodes:body.nodes.filter((n: {id:string}) => !testNode(n.id)), events, incidents,
-          notifications:body.notifications.filter((n: {incident_id:string}) => ids.has(n.incident_id)),
-          audit:body.audit.filter((a: {incident_id:string}) => ids.has(a.incident_id))});
+        if (includeTests) setData(body);
+        else {
+          const testNode = (id: string) => id.startsWith("DEMO") || id === "CHECK-LOCAL";
+          const events = body.events.filter((e: ForestEvent) => !testNode(e.node_id) && e.source !== "demo" && !e.metadata?.synthetic_control);
+          const incidents = body.incidents.filter((i: Incident) => !testNode(i.node_id));
+          const ids = new Set(incidents.map((i: Incident) => i.id));
+          setData({...body, nodes:body.nodes.filter((n: {id:string}) => !testNode(n.id)), events, incidents,
+            notifications:body.notifications.filter((n: {incident_id:string}) => ids.has(n.incident_id)),
+            audit:body.audit.filter((a: {incident_id:string}) => ids.has(a.incident_id))});
+        }
       } else {
         demoState.current ??= publicDemo();
         setData(demoState.current);
@@ -87,7 +90,7 @@ export default function Home() {
       setData((current) => current?.authenticated ? current : demoState.current);
       setError(err instanceof Error ? err.message : "No se pudo conectar al centro");
     }
-  }, []);
+  }, [includeTests]);
   useEffect(() => {
     void refresh();
     void fetch("/api/session")
@@ -160,6 +163,15 @@ export default function Home() {
         if (result[i.node_id] !== "high") result[i.node_id] = i.priority;
       });
     return result;
+  }, [data]);
+  const chainsawAlerts = useMemo(() => {
+    const active = new Set<string>();
+    data?.incidents
+      .filter((i) => !["closed", "discarded"].includes(i.status))
+      .forEach((i) => {
+        if (data.events.some((e) => i.event_ids.includes(e.id) && e.event_type === "chainsaw" && e.persistent)) active.add(i.node_id);
+      });
+    return active;
   }, [data]);
   const selectNode = useCallback(
     (id: string) => {
@@ -338,17 +350,6 @@ export default function Home() {
               {authenticated ? "Herramientas demo" : "Probar escenarios"}
             </button>
           </div>
-          {!authenticated && (
-            <div className="public-banner">
-              <span>
-                <Eye size={15} />
-                <strong>Demo interactiva sin registro</strong> Revisa un incidente, toma una decisión y simula una notificación. Datos y scores sintéticos; cambios solo en este navegador.
-              </span>
-              <button onClick={() => { void mutate("/api/demo", { scenario: "combined" }); setSelected("demo-incident"); }}>
-                Probar el flujo <ArrowUpRight size={13} />
-              </button>
-            </div>
-          )}
           {error && (
             <div className="error-banner">
               <CloudOff size={17} />
@@ -367,6 +368,7 @@ export default function Home() {
               configurada.
             </div>
           )}
+          {data?.authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye simulaciones" : "Vista de operación"}</strong> · {includeTests ? "Los nodos DEMO y las pruebas están identificados como simulados." : "Activa la capa DEMO para representar otros puntos de escucha."}</span><button onClick={() => setIncludeTests(value => !value)}>{includeTests ? "Ocultar simulaciones" : "Ver simulaciones"}</button></div>}
           {!data && !error && (
             <div className="loading">
               <RefreshCw className="spin" size={25} />
@@ -449,6 +451,7 @@ export default function Home() {
                         <ForestMap
                           nodes={data.nodes}
                           alerts={alerts}
+                          chainsawAlerts={chainsawAlerts}
                           onSelect={selectNode}
                         />
                         <span className="map-caption">
@@ -965,13 +968,13 @@ export default function Home() {
                             )
                           }
                         >
-                          {authenticated ? "Aprobar notificación" : "Simular aprobación"}
+                          {authenticated ? "Difundir alerta por WhatsApp" : "Simular difusión"}
                         </button>
                       </>
                     )}
                   </div>
                   <p className="tiny muted">
-                    {authenticated ? "La aprobación registra la solicitud de envío. Consulta su estado en Actividad." : "La demo registra la aprobación en Actividad; no envía mensajes a nadie."}
+                    {authenticated ? "Requiere Internet. Al pulsar, se solicita el envío por n8n y Kapso; consulta el estado de entrega en Actividad." : "La vista pública solo simula la difusión; no envía mensajes."}
                   </p>
                 </>
               ) : (

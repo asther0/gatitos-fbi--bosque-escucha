@@ -1,5 +1,5 @@
 {
-  "name": "Bosque Escucha - Notificaciones Zavu",
+  "name": "Bosque Escucha - Notificaciones Kapso",
   "active": false,
   "settings": {
     "executionOrder": "v1"
@@ -33,7 +33,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://bosque-escucha.vercel.app/api/notifications/zavu/send",
+        "url": "https://bosque-escucha.vercel.app/api/notifications/kapso/send",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,

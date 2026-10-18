@@ -5,7 +5,7 @@ Fuente: [onboarding oficial Hack the Andes](https://hacktheandes.com/deck/onboar
 | Herramienta | Beneficio anunciado | Uso propuesto |
 | --- | --- | --- |
 | n8n | Un mes Cloud Pro por participante | Cola de notificaciones, integración y callbacks del proveedor |
-| Zavu | Tres meses | WhatsApp, con cuenta, destinatario y condiciones del proveedor configurados |
+| Zavu | Tres meses | Beneficio disponible, pero descartado para las alertas del proyecto |
 | Tavily | 8.000 créditos por participante | Contexto documental opcional, fuera del triage |
 | Exa | USD 50 Search API | Búsqueda opcional de contexto |
 | Apify | USD 100 | Fuentes públicas autorizadas si hay necesidad concreta |
@@ -22,15 +22,15 @@ El PRD exige inferencia en laptop: [YAMNet](https://www.tensorflow.org/hub/tutor
 
 Un LLM puede resumir campos conocidos en una iteración posterior; nunca decide los envíos ni reemplaza las reglas de triage. [Gemini admite audio](https://ai.google.dev/gemini-api/docs/audio), pero enviar evidencias a un proveedor externo requiere decidir ese uso y configurar sus credenciales. El circuito actual funciona sin clave de LLM.
 
-## Integración n8n pendiente de credenciales
+## Integración n8n con Kapso
 
 El centro persiste primero la aprobación humana. Después llama al webhook con `Idempotency-Key` y Bearer secret. n8n debe deduplicar persistentemente por notification.id **antes** de llamar a WhatsApp, conservar el ID del proveedor y reportar estados a `/api/notifications/callback`. Una respuesta HTTP del webhook no acredita entrega ni atención humana.
 
-Falta configurar instancia n8n, cuenta Zavu/proveedor, destinatario acordado y secreto de callbacks. No se han enviado mensajes externos. Consultar `docs/API.md` para el contrato exacto.
+El flujo n8n y el número Arvid Company ya están conectados por separado. La clave API de Kapso y el webhook firmado están configurados. Falta corregir la credencial de despacho en n8n, acordar un destinatario y probar una entrega real. No se han enviado alertas externas desde este flujo. Consultar `docs/API.md` para el contrato exacto.
 
 ## Selección para la siguiente integración
 
-1. **n8n + Zavu:** cerrar aprobación → notificación → entrega y respuesta. Hace falta instancia activa, canal WhatsApp conectado y destinatario de prueba.
+1. **n8n + Kapso:** cerrar aprobación → notificación → entrega y respuesta. Hace falta corregir la credencial de n8n y un destinatario de prueba.
 2. **Tavily:** consulta opcional de documentos oficiales por región y tema, con enlaces y fecha. Puede ayudar a preparar contexto para el operador; no acredita lo ocurrido en el bosque. Tiene [integración documentada con n8n](https://docs.tavily.com/documentation/integrations/n8n).
 3. **Exa:** alternativa para búsqueda y recuperación de documentos, con [integración n8n](https://exa.ai/integrations/n8n). Por ahora no se propone conectar ambos buscadores.
 
@@ -38,4 +38,4 @@ n8n soporta [agentes que delegan a otros agentes](https://docs.n8n.io/integratio
 
 n8n Cloud admite claves propias de proveedor o [Gateway credits opcionales](https://support.n8n.io/article/can-i-use-my-own-ai-api-key-on-n-8-n-cloud). El voucher Pro no confirma saldo Gateway ni créditos de inferencia. Hay que comprobarlo en la cuenta antes de elegir modelo.
 
-Para búsquedas contextuales basta región y tema; no se propone enviar coordenadas precisas, audios ni imágenes al buscador. [Zavu](https://www.zavu.dev/en) requiere verificar las condiciones y activación del beneficio con su equipo. Lovable, Apify, AtomicMemory, Qatom y Maritime quedan como opciones: actualmente no desbloquean el circuito principal.
+Para búsquedas contextuales basta región y tema; no se propone enviar coordenadas precisas, audios ni imágenes al buscador. Lovable, Apify, AtomicMemory, Qatom y Maritime quedan como opciones: actualmente no desbloquean el circuito principal.

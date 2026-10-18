@@ -1,3 +1,16 @@
+## Inicio sencillo del MVP en esta Mac
+
+Abrir **Iniciar MVP.command** con doble clic desde la raíz del proyecto. El iniciador reutiliza el entorno Python instalado, cierra una instancia anterior reconocida del centro de este proyecto, habilita la recepción LAN y abre el panel en `http://127.0.0.1:8765` con acceso automático. La ventana del iniciador debe permanecer abierta. El acceso automático usa un fragmento de URL que la página borra inmediatamente; el token no se incluye en las peticiones URL. Tras validar el acceso se conserva en sessionStorage de esa pestaña para permitir recargas; una respuesta 401 lo elimina. Para abrir otra sesión se usa el iniciador.
+
+1. Conectar Mac al Wi-Fi 2,4 GHz del TP-Link; dejar ESP32 por USB y cerrar el monitor serial de Arduino.
+2. Abrir el iniciador. Si hace falta, desplegar **Configurar Wi-Fi**, indicar red y clave, y pulsar **Conectar ESP32**. Se detecta la IP actual; no se guarda la contraseña en la laptop. Con firmware protocolo 2, si DHCP cambió la IP de la Mac, el panel actualiza el destino por USB automáticamente al probar o activar escucha, siempre que ambos estén en la misma subred.
+3. Pulsar **Probar motosierra**: reproduce la muestra local en los altavoces y ordena la captura del micrófono durante la reproducción. La evidencia sigue viajando por Wi-Fi desde la placa. No se inyecta una detección ni se envía el archivo de muestra directamente al clasificador. El resultado se muestra en la página y se puede escuchar la captura real.
+4. **Activar escucha** habilita clips de 3 segundos cada 5 segundos; **Detener escucha** lo desactiva en la placa. No equivale a escucha continua. Tras reiniciar el ESP32 permanece apagada hasta que pulses el botón otra vez.
+
+Los controles de hardware requieren token y acceso desde loopback en la Mac. La recepción del ESP32 acepta el token por la LAN. Un nodo DEMO no envía WhatsApp; la alerta hablada usa `say` de macOS y solo se solicita para una detección persistente. Sin Internet funcionan recepción, análisis y revisión locales; los servicios cloud requieren reconexión. La muestra `.local/wws-chainsaw-clip.wav` y los modelos ya instalados son necesarios para la prueba sin Internet. El panel avisa si falta el audio o hay una red/IP incorrecta.
+
+Verificación de interfaz y controles: `local-center/test_mvp_controls.py` cubre autorización local, coordinación reproducción/captura, restitución de modo automático y rechazo de otra IP. Esas pruebas usan un serial simulado; la validación acústica real sigue dependiendo del montaje.
+
 # Centro local Bosque Escucha
 
 Centro autónomo para laptop, sin necesidad de Internet: SQLite, archivos de evidencia, revisión humana, triage determinista y cola persistente. La interfaz y su plano esquemático se sirven localmente. El plano muestra únicamente coordenadas configuradas; no representa una cartografía geográfica de precisión.
@@ -65,6 +78,22 @@ Cada línea contiene un payload de evento JSON completo y UUID estable. El bridg
 
 ## Modelos reales, opt-in
 
+### Demo rápida con el INMP441 conectado al ESP32
+
+Con el firmware `firmware/mic_test` o el nuevo `firmware/mic_wifi` cargado, el ESP32 entrega clips de 2 segundos por USB. El nuevo firmware también puede enviarlos directamente por la LAN del TP-Link; ver [firmware/mic_wifi/README.md](../firmware/mic_wifi/README.md) para el aprovisionamiento y la prueba Wi-Fi. En esta laptop el modelo YAMNet se ejecuta en Python 3.11 (nunca dentro del ESP32). El centro local ya debe estar corriendo con `AUTO_ANALYZE=1` y las rutas de YAMNet configuradas. Para escuchar, clasificar y registrar capturas bajo un nodo de demostración:
+
+```bash
+local-center/.venv-ml/bin/python local-center/mic_detect.py --count 0 --send
+```
+
+Ejecutar desde la raíz del repositorio; detener con Ctrl+C. El script muestra las tres clases principales, los puntajes de motosierra y pasos y el estado de análisis del centro. `DEMO-ESP32-MIC` evita tratar una prueba con audio reproducido como actividad de campo. Cada clip queda en `.local/ultima-captura.wav`; el centro conserva su propia copia de evidencia.
+
+Control negativo real: el WAV de voz grabado con este INMP441 obtuvo `Speech 0.999`, `Chainsaw 0.000`, sin evento. Control positivo **de archivo**, no de captura de campo: el segundo 10–12 de [WWS Chainsaw.ogg](https://commons.wikimedia.org/wiki/File:WWS_Chainsaw.ogg), grabación de Leena Ahonen publicada bajo CC BY 4.0, convertido a WAV mono 16 kHz, obtuvo `Chainsaw 0.991` y tres ventanas consecutivas; `/api/raw` creó un incidente DEMO de prioridad media. Otro audio auténtico de motosierra, [Chainsaw 7 0.ogg](https://commons.wikimedia.org/wiki/File:Chainsaw_7_0.ogg), obtuvo solo `Chainsaw 0.235`: el modelo todavía no está calibrado para campo. En la reproducción por el altavoz, el micrófono físico generó tres detecciones `Chainsaw` con puntuaciones 0.713, 0.889 y 0.720, pero cada clip individual quedó `persistent:false`; el incidente físico DEMO quedó en observación. La distancia y el volumen influyen; no presentar esta reproducción como captura de bosque.
+
+Validación de pasos (18 de octubre): ocho capturas del ESP32 sin estímulo controlado dieron `Walk, footsteps` entre 0.000 y 0.023; no prueban sensibilidad. Se evaluaron dos audios de pasos conocidos directamente como archivos: [Walking-on-gravel-38827.ogg](https://commons.wikimedia.org/wiki/File:Walking-on-gravel-38827.ogg) dio 0.589 y [ZapSibAudio-Steps.ogg](https://commons.wikimedia.org/wiki/File:ZapSibAudio-Steps.ogg) dio 0.118, ambos por debajo del umbral 0.65. Después se reprodujo el primero por el altavoz y el ESP32 captó tres clips: 0.005, 0.008 y 0.024; ningún evento. Por ahora **no presentar detección de pasos como validada**. Hace falta audio positivo captado por este montaje y evaluación de falsos positivos antes de cambiar el umbral.
+
+### Instalación y modelos
+
 Las dependencias de IA son pesadas y dependen de la versión Python/CPU. Se recomienda un entorno separado **Python 3.11** para TensorFlow; el entorno web puede usar otro Python. No se instalan modelos durante el arranque y nunca se simula una detección por ausencia de modelo.
 
 Audio: instalar las dependencias fijadas en `requirements-ml.txt` y ejecutar `setup_models.py` para obtener YAMNet SavedModel y `yamnet_class_map.csv` oficiales. El loader usa `tensorflow.saved_model.load` directamente sobre archivos locales, sin depender de TensorFlow Hub en ejecución. `AudioDetector` usa inferencia real CPU, exige WAV mono 16 kHz y evalúa Chainsaw / Walk, footsteps; umbral inicial 0.65 y 3 ventanas consecutivas para persistencia. Son parámetros iniciales pendientes de calibración, no resultados de precisión. El clip debe contener al menos 0.975 s. No compartir instancia entre nodos ni concatenar ventanas separadas por intervalos largos: la CLI crea un detector nuevo por archivo.
@@ -93,7 +122,7 @@ N8N_WEBHOOK_TOKEN=token-del-webhook
 NOTIFICATION_CALLBACK_SECRET=token-callback-del-proveedor
 ```
 
-El worker envía snapshots a `POST CLOUD_BASE_URL/api/sync` con UUID estables, Bearer token y reintentos. **La sincronización nunca dispara notificaciones.** Antes del snapshot, sube la evidencia por `/api/evidence` con `CENTER_SYNC_TOKEN`; guarda en SQLite la correspondencia entre archivo local y path privado cloud para reutilizarlo. El snapshot conserva `metadata.local_evidence_path` como procedencia y usa el path cloud para acceder con autenticación. Una subida fallida retiene el trabajo para reintentar; el centro local sigue permitiendo escuchar/ver sus archivos sin Internet. Los eventos sintéticos y nodos DEMO quedan fuera de la sincronización real.
+El worker envía snapshots a `POST CLOUD_BASE_URL/api/sync` con UUID estables, Bearer token y reintentos. **La sincronización nunca dispara notificaciones.** Antes del snapshot, sube la evidencia por `/api/evidence` con `CENTER_SYNC_TOKEN`; guarda en SQLite la correspondencia entre archivo local y path privado cloud para reutilizarlo. El snapshot conserva `metadata.local_evidence_path` como procedencia y usa el path cloud para acceder con autenticación. Una subida fallida retiene el trabajo para reintentar; el centro local sigue permitiendo escuchar/ver sus archivos sin Internet. Los escenarios sintéticos integrados (`DEMO-01`, `source=demo`) quedan locales. Una captura WAV real subida a un nodo `DEMO-*` sí se sincroniza para la demostración, pero aparece únicamente al pulsar **Ver datos de prueba** en el Command Center y no puede enviar alertas externas.
 
 WhatsApp: primero verificar y asignar un contacto acordado; luego aprobar explícitamente. Se genera una notificación única por incidente y una tarea persistente. Sin webhook configurado sigue en cola. El webhook recibe `{notification,incident,recipient}`, token Bearer e `Idempotency-Key` igual al UUID de notificación. n8n debe **deduplicar persistentemente por ese UUID antes de enviar**. Una aceptación HTTP deja `queued`, registra `notification_webhook_accepted` y retira el trabajo para no volver a enviarlo: no equivale a envío ni entrega. El proveedor debe confirmar por `POST /api/notifications/callback`, con Bearer `NOTIFICATION_CALLBACK_SECRET` y `{notification_id,status,provider_id?,actor?}`. Status admite `sent`, `delivered`, `failed`, `acknowledged`; el último requiere actor y registra reconocimiento humano separado de entrega y cierre. Callbacks repetidos son idempotentes. n8n cloud no alcanza loopback: usar n8n local o acordar acceso privado; la integración cloud dispone de su propio callback. Proveedor WhatsApp y plantillas siguen pendientes.
 

@@ -1,0 +1,29 @@
+# Notificaciones WhatsApp con Kapso
+
+El proyecto usa n8n como entrada autenticada y el adaptador del servidor para validar la aprobación, reservar cada `notification_id` de forma permanente y enviar por Kapso. El número **Arvid Company** conectado es `+51 980 556 392`, con Meta Phone Number ID `955858037609085`. El número sandbox del mismo proyecto no se usa para producción.
+
+Estado al 18 de octubre de 2026: la migración fue aplicada y verificada en Supabase; el adaptador está desplegado en producción; el flujo n8n fue actualizado y publicado. El CLI de Kapso autenticó la clave del proyecto y confirmó Arvid Company como `CONNECTED`. `KAPSO_API_KEY`, `KAPSO_PHONE_NUMBER_ID`, `KAPSO_WEBHOOK_SECRET` y `N8N_KAPSO_ADAPTER_SECRET` están en Vercel. El webhook de recibos `31d3a745-cfd0-4cee-96f6-15e2243245f8` está activo para `sent`, `delivered` y `failed`. Una petición autenticada con UUID inexistente devuelve `blocked_or_already_reserved`, sin envío; una firma falsa recibe 401. Los mensajes de la empresa sin correlación con Bosque Escucha reciben 200 y se ignoran. Tras actualizar la credencial `Header Auth account 3`, una petición sintética al webhook publicado de n8n respondió HTTP 200 con `{"accepted":false,"status":"blocked_or_already_reserved"}`. Esto confirma n8n → adaptador y el rechazo seguro de una notificación inexistente, sin envío.
+
+Prueba directa autorizada por el destinatario: su conversación con Arvid Company se activó el 18 de octubre; un texto claramente marcado como prueba enviado mediante Kapso CLI obtuvo `wamid.HBgLNTE5MjI4NjM5NDYVAgARGBJFNEM0MjIxREMxQTQwOUVGODIA`, y la consulta al proveedor registró `sent` y `delivered` con `billable:false`. Los callbacks de esos mensajes externos al adaptador respondieron HTTP 200 sin afectar notificaciones de Bosque Escucha.
+
+Simulacro de punta a punta autorizado por Jhomar: se creó un incidente explícitamente titulado `SIMULACRO DE INTEGRACIÓN — NO ES UNA ALERTA REAL` en `ESP32-MIC-01`, sin evidencia de campo, y un contacto temporal cuyo único destino era el teléfono de Jhomar. La ruta de revisión del centro de comando lo pasó a `verified`; la ruta `/api/incidents/f6292129-844a-469f-aa36-695420b5ca51/notify` respondió HTTP 202 con `accepted: true` y seleccionó ese contacto. La notificación `0efea56b-ab70-4e6a-acf0-aad946e36915` avanzó a `delivered` mediante el callback firmado de Kapso. Después, el incidente pasó a `closed` y el contacto temporal quedó desactivado. Este simulacro verifica centro de comando → n8n → adaptador → Kapso → WhatsApp → recibo de entrega; no equivale a una detección real del bosque. Para alertas operativas falta habilitar un contacto acordado para el sector del nodo.
+
+El mensaje se presenta ahora en líneas separadas con encabezado, prioridad, indicio, sector, nodo, hora de registro en Perú, referencia corta y siguiente paso. El contenido variable se limita a una línea para que no pueda alterar las etiquetas del aviso. Tras desplegar este formato, un segundo simulacro marcado `NO ES ALERTA REAL` pasó por la misma ruta y la notificación `64e707d5-a82e-4bfd-9461-b659cc542403` llegó a `delivered`. El CLI de Kapso devolvió el texto con todos los saltos de línea y campos esperados. El incidente quedó cerrado y el contacto temporal, desactivado.
+
+Este formato es un **mensaje de texto estructurado**, no una plantilla de Meta aprobada. Fuera de la ventana de atención de 24 horas se deberá crear y aprobar una plantilla de WhatsApp antes de iniciar la conversación automáticamente.
+
+## Activación
+
+1. Aplicar `supabase/migrations/202610180008_kapso_delivery.sql` después de las migraciones anteriores. Renombra las tablas y funciones del adaptador previo, conservando cualquier reserva histórica.
+2. Crear una clave API de proyecto en Kapso (Integrations → API keys) para el proyecto Arvid System. Guardar en el servidor `KAPSO_API_KEY`, `KAPSO_PHONE_NUMBER_ID=955858037609085`, y `N8N_KAPSO_ADAPTER_SECRET`. La última debe coincidir con la credencial Header Auth del nodo de despacho n8n.
+3. En Kapso, registrar un webhook **del número Arvid Company** hacia `https://bosque-escucha.vercel.app/api/notifications/kapso/callback` con eventos `whatsapp.message.sent`, `whatsapp.message.delivered`, `whatsapp.message.failed`. Guardar su secreto como `KAPSO_WEBHOOK_SECRET` en el servidor. El callback verifica `X-Webhook-Signature` sobre el cuerpo crudo y deduplica por `X-Idempotency-Key`.
+4. Actualizar el flujo n8n `I91iM6yA5v9jt2zX`: el nodo de despacho apunta a `https://bosque-escucha.vercel.app/api/notifications/kapso/send`. Mantener el webhook de entrada autenticado y la credencial Header Auth del adaptador. Export importable: `notificaciones-kapso.json`.
+5. Desplegar y probar con un contacto WhatsApp autorizado del sector. El contacto debe iniciar una conversación con Arvid Company dentro de las 24 horas previas para que un texto libre sea permitido; de otro modo hace falta una plantilla aprobada.
+
+## Seguridad y estado
+
+El adaptador consulta incidente y contacto desde Supabase, no confía en destinatario o texto enviados por n8n. Rechaza demo, nodos CHECK, aprobaciones ausentes, sectores distintos y notificaciones del worker local. La reserva en base de datos ocurre antes de llamar a Kapso. Un timeout o respuesta ambigua queda `uncertain` y nunca se reenvía a ciegas. Kapso devuelve un `wamid` si acepta el mensaje; eso deja la notificación `queued` hasta que llegue un recibo firmado `sent` o `delivered`.
+
+No se considera una respuesta HTTP de n8n como prueba de entrega. `acknowledged` requiere una confirmación humana independiente. Las reservas ambiguas deben investigarse en el panel de Kapso antes de cualquier operación manual.
+
+Referencias: [Enviar texto](https://docs.kapso.ai/docs/whatsapp/send-messages/text), [eventos](https://docs.kapso.ai/docs/platform/webhooks/message-events), [firma de webhooks](https://docs.kapso.ai/docs/platform/webhooks/security).

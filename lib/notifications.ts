@@ -53,7 +53,7 @@ export async function dispatchNotification(id: string) {
     return {
       accepted: false,
       message:
-        "Entrega no confirmada. Revisa n8n y Zavu antes de reintentar; una reserva existente impide duplicar el envío.",
+        "Entrega no confirmada. Revisa n8n y Kapso antes de reintentar; una reserva existente impide duplicar el envío.",
     };
   }
 }

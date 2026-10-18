@@ -26,6 +26,10 @@ class AudioDetector:
             chain=float(row[self.names.index('Chainsaw')])
             self.history.append(chain>=self.threshold)
             persistent=persistent or (len(self.history)==self.windows and all(self.history))
+        peak=np.max(scores,axis=0)
+        self.last_summary={'top':[{'label':self.names[int(i)],'score':float(peak[i])} for i in np.argsort(peak)[-3:][::-1]],
+                           'chainsaw_score':float(peak[self.names.index('Chainsaw')]),'threshold':self.threshold,
+                           'persistent':persistent}
         for label,event in [('Chainsaw','chainsaw'),('Walk, footsteps','footsteps')]:
             if label not in self.names:continue
             confidence=float(np.max(scores[:,self.names.index(label)]))

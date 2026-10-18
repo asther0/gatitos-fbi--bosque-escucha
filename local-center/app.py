@@ -1,5 +1,5 @@
-"""Offline command center. Run only on loopback; all API access requires a token."""
-import asyncio, hashlib, json, logging, os, secrets, sqlite3, time, uuid
+"""Offline command center; bind to a trusted LAN IP for ESP32 Wi-Fi uploads."""
+import asyncio, hashlib, ipaddress, json, logging, os, secrets, shutil, sqlite3, subprocess, time, uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -121,8 +121,10 @@ async def process_jobs():
                         with connect() as c: payload={t:rows(c,t) for t in ('nodes','events','incidents','audit','notifications')}
                         token=os.getenv('CENTER_SYNC_TOKEN','')
                         if not token:continue
-                        # Synthetic scenarios stay local and never enter the real-data sync route.
-                        payload['nodes']=[n for n in payload['nodes'] if not n['id'].startswith('DEMO')]
+                        # Built-in synthetic scenarios stay local. Recorded mic captures on a
+                        # DEMO-prefixed node can sync as visibly marked test data; notification
+                        # guards still prevent those nodes from sending external alerts.
+                        payload['nodes']=[n for n in payload['nodes'] if n['id']!='DEMO-01']
                         node_ids={n['id'] for n in payload['nodes']}
                         payload['events']=[e for e in payload['events'] if e['source']!='demo' and e['node_id'] in node_ids]
                         event_ids={e['id'] for e in payload['events']}
@@ -196,6 +198,14 @@ app=FastAPI(title='Bosque Escucha · Centro local',lifespan=lifespan)
 def index():return FileResponse(ROOT/'static'/'index.html')
 @app.get('/health')
 def health():return {'ok':True,'mode':'local'}
+@app.get('/api/local-session')
+def local_session(request:Request):
+    try:
+        local=ipaddress.ip_address(request.client.host).is_loopback and request.url.hostname in ('127.0.0.1','localhost','::1')
+    except (ValueError,AttributeError):
+        local=False
+    if not local:raise HTTPException(403,'Acceso disponible solo en esta Mac')
+    return {'token':TOKEN}
 @app.get('/api/dashboard',dependencies=[Depends(auth)])
 def dashboard():
     with connect() as c:
@@ -319,6 +329,23 @@ def analysis_configuration(kind):
     return 'Modelos locales no configurados: '+', '.join(missing) if missing else None
 
 MODEL_CACHE={}
+VOICE_LAST={}
+
+def announce_chainsaw(node_id):
+    if os.getenv('VOICE_ALERT','').lower() not in ('1','true','yes'):
+        return False
+    if not shutil.which('say'):
+        logging.warning('VOICE_ALERT requested but macOS say is unavailable')
+        return False
+    cooldown=max(0,int(os.getenv('VOICE_ALERT_COOLDOWN_SECONDS','90')))
+    current=time.monotonic()
+    if current-VOICE_LAST.get(node_id,-float('inf'))<cooldown:
+        return False
+    subprocess.Popen(['say','-v','Paulina',
+                      'Alerta. Posible sonido de motosierra detectado. Zona restringida. Identifíquese, por favor.'],
+                     stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    VOICE_LAST[node_id]=current
+    return True
 
 def analyze_capture(capture):
     from models import AudioDetector,VisionDetector
@@ -329,9 +356,12 @@ def analyze_capture(capture):
     detector=MODEL_CACHE[kind]
     if kind=='audio':detector.history.clear() # Do not correlate discontinuous clips or different nodes.
     detections=detector.predict(DATA/'evidence'/capture['path'])
+    if kind=='audio':capture['analysis_summary']=getattr(detector,'last_summary',None)
     for detection in detections:
         detection['metadata']={**detection.get('metadata',{}),'capture_id':capture['id'],'model':'YAMNet' if kind=='audio' else 'YOLO'}
-        ingest(EventIn(event_id=str(uuid.uuid5(uuid.UUID(capture['id']),detection['event_type'])),node_id=capture['node_id'],detected_at=capture['detected_at'],source='local_center',evidence_path=capture['path'],evidence_type=kind,**detection))
+        result=ingest(EventIn(event_id=str(uuid.uuid5(uuid.UUID(capture['id']),detection['event_type'])),node_id=capture['node_id'],detected_at=capture['detected_at'],source='local_center',evidence_path=capture['path'],evidence_type=kind,**detection))
+        if detection['event_type']=='chainsaw' and detection.get('persistent') and result['incident']:
+            announce_chainsaw(capture['node_id'])
     return len(detections)
 
 async def process_captures():
@@ -396,3 +426,6 @@ async def heartbeat(node_id:str,request:Request):
         if 'battery_pct' in body:node['battery_pct']=battery
         put(c,'nodes',node);sync_job(c)
     return {'node':node}
+
+from mvp_controls import install_controls
+install_controls(app, auth, TOKEN, connect, rows)

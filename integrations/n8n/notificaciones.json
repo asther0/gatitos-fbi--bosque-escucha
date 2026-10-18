@@ -40,7 +40,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().map((item, index) => {\n const p = item.json.body ?? item.json;\n const n = p.notification ?? {}, i = p.incident ?? {}, c = p.contact;\n const reasons = [];\n if (p.source === 'demo' || i.source === 'demo' || n.source === 'demo' || i.node_id === 'DEMO-01' || (p.events ?? []).some(e => e.source === 'demo')) reasons.push('demo_rejected');\n if (typeof n.approved_by !== 'string' || !n.approved_by.trim() || !['verified','assigned'].includes(i.status)) reasons.push('not_approved');\n if (!c || c.enabled !== true || typeof c.destination !== 'string' || !/^\\+[1-9]\\d{7,14}$/.test(c.destination) || !['whatsapp','sms'].includes(c.channel)) reasons.push('missing_or_invalid_contact');\n if (c && (n.contact_id !== c.id || n.destination !== c.destination)) reasons.push('contact_mismatch');\n if (!n.id || !i.id || n.incident_id !== i.id) reasons.push('invalid_identity');\n if (n.channel !== 'n8n') reasons.push('not_cloud_owned');\n if (p.synthetic === true) reasons.push('synthetic_rejected');\n return {json:{dry_run:true,status:'pending_configuration',pending_configuration:['authenticated_webhook','atomic_persistent_idempotency','zavu_credentials','provider_proof_callbacks'],validation:{accepted:reasons.length === 0,reasons},dispatch_allowed:false,provider_call_performed:false,provider_id:null,sent_at:null,delivered_at:null,acknowledged_at:null},pairedItem:{item:index}};\n});"
+        "jsCode": "return $input.all().map((item, index) => {\n const p = item.json.body ?? item.json;\n const n = p.notification ?? {}, i = p.incident ?? {}, c = p.contact;\n const reasons = [];\n if (p.source === 'demo' || i.source === 'demo' || n.source === 'demo' || i.node_id === 'DEMO-01' || (p.events ?? []).some(e => e.source === 'demo')) reasons.push('demo_rejected');\n if (typeof n.approved_by !== 'string' || !n.approved_by.trim() || !['verified','assigned'].includes(i.status)) reasons.push('not_approved');\n if (!c || c.enabled !== true || typeof c.destination !== 'string' || !/^\\+[1-9]\\d{7,14}$/.test(c.destination) || !['whatsapp','sms'].includes(c.channel)) reasons.push('missing_or_invalid_contact');\n if (c && (n.contact_id !== c.id || n.destination !== c.destination)) reasons.push('contact_mismatch');\n if (!n.id || !i.id || n.incident_id !== i.id) reasons.push('invalid_identity');\n if (n.channel !== 'n8n') reasons.push('not_cloud_owned');\n if (p.synthetic === true) reasons.push('synthetic_rejected');\n return {json:{dry_run:true,status:'pending_configuration',pending_configuration:['authenticated_webhook','atomic_persistent_idempotency','kapso_credentials','provider_proof_callbacks'],validation:{accepted:reasons.length === 0,reasons},dispatch_allowed:false,provider_call_performed:false,provider_id:null,sent_at:null,delivered_at:null,acknowledged_at:null},pairedItem:{item:index}};\n});"
       }
     },
     {
@@ -85,7 +85,7 @@
         260
       ],
       "parameters": {
-        "content": "## PENDIENTE: idempotencia ANTES de Zavu\nReserva persistente y ATÓMICA con clave única notification.id antes de cualquier llamada. No usar memoria, staticData ni lookup+insert no atómico. Concurrentes: un solo propietario. Persistir estado y provider_id; clave idempotente del proveedor si disponible. Timeout ambiguo: reconciliar, nunca reenviar a ciegas. Validar recuperación tras caída.",
+        "content": "## PENDIENTE: idempotencia ANTES de Kapso\nReserva persistente y ATÓMICA con clave única notification.id antes de cualquier llamada. No usar memoria, staticData ni lookup+insert no atómico. Concurrentes: un solo propietario. Persistir estado y provider_id; clave idempotente del proveedor si disponible. Timeout ambiguo: reconciliar, nunca reenviar a ciegas. Validar recuperación tras caída.",
         "width": 440,
         "height": 340,
         "color": 5
@@ -101,7 +101,7 @@
         260
       ],
       "parameters": {
-        "content": "## PENDIENTE: Zavu y callbacks\nCredenciales Zavu mediante almacén seguro n8n, nunca código. Configurar endpoint/contrato real antes de añadir proveedor. POST /api/notifications/callback con bearer NOTIFICATION_CALLBACK_SECRET. HTTP 2xx = aceptado solamente. sent y delivered requieren prueba real del proveedor + provider_id. failed requiere fallo real. acknowledged requiere respuesta humana real y actor; no equivale a delivered. Autenticar callbacks, deduplicar y evitar regresiones. No cerrar incidente automáticamente.",
+        "content": "## PENDIENTE: Kapso y callbacks\nCredenciales Kapso mediante almacén seguro n8n, nunca código. Configurar endpoint/contrato real antes de añadir proveedor. POST /api/notifications/callback con bearer NOTIFICATION_CALLBACK_SECRET. HTTP 2xx = aceptado solamente. sent y delivered requieren prueba real del proveedor + provider_id. failed requiere fallo real. acknowledged requiere respuesta humana real y actor; no equivale a delivered. Autenticar callbacks, deduplicar y evitar regresiones. No cerrar incidente automáticamente.",
         "width": 440,
         "height": 340,
         "color": 5

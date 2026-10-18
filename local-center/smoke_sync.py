@@ -49,7 +49,7 @@ async def check():
             await asyncio.sleep(5.2)
             assert seen['uploads']==1 and seen['syncs']==3,seen
             assert len(seen['ids'])==1
-            print('PASS: offline retry, one blob upload, private cloud path, local path preserved, UUID upsert, DEMO excluded')
+            print('PASS: offline retry, one blob upload, private cloud path, local path preserved, UUID upsert, synthetic DEMO excluded')
         finally:
             task.cancel();app.httpx.AsyncClient=original
             try:await task
