@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as folder:
         duplicate=c.post('/api/raw',files={'file':('clip.wav',audio.getvalue())},data={'node_id':'RAW-01','capture_id':capture_id})
         assert duplicate.json()==raw.json()
         assert len(c.get('/api/dashboard').json()['events'])==0,'Raw input must not fabricate detections'
-        event={'event_id':str(uuid.uuid4()),'node_id':'TEST-01','event_type':'chainsaw','confidence':.8,'persistent':True,'source':'demo'}
+        event={'event_id':str(uuid.uuid4()),'node_id':'TEST-01','event_type':'chainsaw','confidence':.8,'persistent':True,'source':'device'}
         r=c.post('/api/events',json=event);assert r.status_code==200,r.text
         incident=r.json()['incident'];assert incident['priority']=='medium'
         assert c.post('/api/events',json=event).json()['event']['id']==event['event_id']
@@ -33,9 +33,14 @@ with tempfile.TemporaryDirectory() as folder:
         n=c.post(f'/api/incidents/{iid}/notify',json={'approved':True});assert n.status_code==200,n.text
         assert c.post(f'/api/incidents/{iid}/notify',json={'approved':True}).json()['id']==n.json()['id']
         data=c.get('/api/dashboard').json();assert len(data['notifications'])==1
-        callback={'notification_id':n.json()['id'],'status':'delivered'}
+        callback={'notification_id':n.json()['id'],'status':'delivered','provider_id':'smoke-provider'}
         assert c.post('/api/notifications/callback',json=callback).status_code==401
         callback_headers={'Authorization':'Bearer callback-only'}
+        assert c.post('/api/notifications/callback',json={k:v for k,v in callback.items() if k!='provider_id'},headers=callback_headers).status_code==422
+        sent=c.post('/api/notifications/callback',json={**callback,'status':'sent'},headers=callback_headers)
+        assert sent.json()['notification']['status']=='sent'
+        failed=c.post('/api/notifications/callback',json={**callback,'status':'failed'},headers=callback_headers)
+        assert failed.json()['notification']['status']=='sent'
         delivered=c.post('/api/notifications/callback',json=callback,headers=callback_headers)
         assert delivered.status_code==200,delivered.text
         assert delivered.json()['notification']['status']=='delivered'

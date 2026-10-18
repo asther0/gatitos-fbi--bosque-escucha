@@ -93,11 +93,25 @@ def ingest(e):
         sync_job(c)
     return dict(event=event,incident=incident)
 
+def is_demo_incident(c,incident):
+    if incident['node_id'].upper().startswith('DEMO'):return True
+    event_ids=set(incident.get('event_ids',[]))
+    return any(e['id'] in event_ids and e['source']=='demo' for e in rows(c,'events'))
+
 async def process_jobs():
     while True:
         try:
             with connect() as c: jobs=[dict(r) for r in c.execute('SELECT * FROM jobs WHERE next_at<=?',(time.time(),))]
             for job in jobs:
+                if job['kind']=='notify':
+                    with connect() as c:
+                        stored=json.loads(job['body'])
+                        incident=get(c,'incidents',stored['incident']['id'])
+                        if is_demo_incident(c,incident) or is_demo_incident(c,stored['incident']):
+                            n=get(c,'notifications',job['id']);n.update(status='blocked',last_error='DEMO: envío externo bloqueado')
+                            put(c,'notifications',n);c.execute('DELETE FROM jobs WHERE id=?',(job['id'],))
+                            audit(c,incident['id'],'demo_notification_blocked',{'notification_id':n['id']})
+                            continue
                 target=os.getenv('CLOUD_BASE_URL','').rstrip('/')+'/api/sync' if job['kind']=='sync' else os.getenv('N8N_NOTIFY_WEBHOOK','')
                 if not target or target=='/api/sync':continue
                 if job['attempts']>=8:continue
@@ -235,8 +249,10 @@ async def notify(incident_id:str,request:Request):
         previous=next((n for n in rows(c,'notifications') if n['incident_id']==incident_id),None)
         if previous:return previous
         n=dict(id=uid(),incident_id=incident_id,channel='whatsapp',status='queued',approved_by='local_operator',created_at=now(),sent_at=None,last_error=None,delivered_at=None,acknowledged_at=None,acknowledged_by=None,attempts=0,next_attempt_at=None,provider_id=None,destination=i['assigned_to'])
+        demo=is_demo_incident(c,i)
+        if demo:n.update(status='blocked',last_error='DEMO: aprobación simulada, envío externo bloqueado')
         put(c,'notifications',n)
-        c.execute('INSERT INTO jobs(id,kind,body) VALUES(?,?,?)',(n['id'],'notify',json.dumps({'notification':n,'incident':i,'recipient':i['assigned_to']})))
+        if not demo:c.execute('INSERT INTO jobs(id,kind,body) VALUES(?,?,?)',(n['id'],'notify',json.dumps({'notification':n,'incident':i,'recipient':i['assigned_to']})))
         audit(c,incident_id,'notification_approved',{'notification_id':n['id']});sync_job(c)
     return n
 @app.post('/api/demo',dependencies=[Depends(auth)])
@@ -249,10 +265,13 @@ async def demo(request:Request):
 
 @app.put('/api/nodes/{node_id}',dependencies=[Depends(auth)])
 async def configure_node(node_id:str,request:Request):
+    try:EventIn(node_id=node_id,event_type='ambient',confidence=0)
+    except ValueError:raise HTTPException(422,'node_id debe usar A-Z, a-z, 0-9, guion o guion bajo; máximo 64')
     body=await request.json()
+    if any(len(str(body.get(k,'')))>200 for k in ('name','sector')):raise HTTPException(422,'Nombre y sector máximo 200 caracteres')
     lat,lon=body.get('latitude'),body.get('longitude')
-    if lat is not None and (not isinstance(lat,(int,float)) or not -90<=lat<=90):raise HTTPException(422,'Latitud inválida')
-    if lon is not None and (not isinstance(lon,(int,float)) or not -180<=lon<=180):raise HTTPException(422,'Longitud inválida')
+    if lat is not None and (isinstance(lat,bool) or not isinstance(lat,(int,float)) or not -90<=lat<=90):raise HTTPException(422,'Latitud inválida')
+    if lon is not None and (isinstance(lon,bool) or not isinstance(lon,(int,float)) or not -180<=lon<=180):raise HTTPException(422,'Longitud inválida')
     with connect() as c:
         node=next((n for n in rows(c,'nodes') if n['id']==node_id),dict(id=node_id,status='offline',last_seen=None,created_at=now(),battery_pct=None))
         node.update(name=str(body.get('name',node_id)),sector=str(body.get('sector','Sin configurar')),latitude=lat,longitude=lon)
@@ -272,8 +291,10 @@ async def notification_callback(request:Request):
         raise HTTPException(401,'Callback no autorizado')
     body=await request.json();status=body.get('status')
     if status not in ('sent','delivered','failed','acknowledged'):raise HTTPException(422,'Estado inválido')
+    if status in ('sent','delivered') and not str(body.get('provider_id') or '').strip():raise HTTPException(422,'provider_id requerido para envío o entrega')
     with connect() as c:
         n=get(c,'notifications',body.get('notification_id',''))
+        if is_demo_incident(c,get(c,'incidents',n['incident_id'])):raise HTTPException(409,'DEMO no admite confirmación de envío externo')
         previous=n.copy()
         if status=='acknowledged':
             if not body.get('actor'):raise HTTPException(422,'Identificar quién confirmó')
@@ -282,7 +303,7 @@ async def notification_callback(request:Request):
             if n['status']!='delivered':n.update(status='delivered',delivered_at=now(),sent_at=n.get('sent_at') or now())
         elif status=='sent':
             if n['status'] not in ('sent','delivered'):n.update(status='sent',sent_at=now())
-        elif n['status']!='delivered':n.update(status='failed',last_error='Proveedor reportó fallo')
+        elif n['status'] not in ('sent','delivered'):n.update(status='failed',last_error='Proveedor reportó fallo')
         if body.get('provider_id'):n['provider_id']=str(body['provider_id'])[:300]
         if n!=previous:
             put(c,'notifications',n);audit(c,n['incident_id'],'notification_'+status,{'notification_id':n['id'],'actor':body.get('actor')});sync_job(c)
