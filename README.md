@@ -4,7 +4,7 @@ Vigilancia del bosque con evidencia acústica y visual, revisión humana y coord
 
 **Centro público:** https://bosque-escucha.vercel.app · **Repositorio:** https://github.com/asther0/gatitos-fbi--bosque-escucha
 
-El [PRD convertido a Markdown](docs/Bosque_Escucha_PRD_MVP.md) conserva las nueve secciones del PDF original. El diseño del centro web adapta la estructura visual de [WOKI](https://github.com/platanus-hack/platanus-hack-26-co-team-28), proyecto anterior del equipo.
+El [PRD convertido a Markdown](docs/Bosque_Escucha_PRD_MVP.md) conserva las nueve secciones del PDF original.
 
 ## Arquitectura
 
