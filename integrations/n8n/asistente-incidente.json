@@ -1,0 +1,108 @@
+{
+  "name": "Bosque Escucha - Asistente de incidente (borrador)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "57df2d3f-b04f-4180-b49f-9769d985f2e5",
+      "name": "Inicio manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "611532b6-4523-4930-a8fc-7f1b4f7e9839",
+      "name": "Muestra sintética",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{json:{\"synthetic\":true,\"incident\":{\"id\":\"00000000-0000-4000-8000-000000000003\",\"node_id\":\"DEMO-01\",\"title\":\"Motosierra sintética\",\"priority\":\"medium\",\"status\":\"pending_review\"},\"events\":[{\"id\":\"00000000-0000-4000-8000-000000000004\",\"node_id\":\"DEMO-01\",\"event_type\":\"chainsaw\",\"confidence\":0.83,\"persistent\":true,\"detected_at\":\"2026-10-17T18:00:00.000Z\",\"source\":\"demo\",\"evidence_path\":null}]}}];"
+      }
+    },
+    {
+      "id": "76da7d3c-379c-4118-8d96-3426028dbfb4",
+      "name": "Resumen determinista - no LLM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((item,index) => {\n const p=item.json, incident=p.incident ?? {}, events=Array.isArray(p.events)?p.events:[];\n return {json:{dry_run:true,status:'pending_configuration',method:'deterministic_code_not_llm',synthetic:p.synthetic === true,facts:{incident_id:incident.id ?? null,node_id:incident.node_id ?? null,title:incident.title ?? null,priority:incident.priority ?? null,status:incident.status ?? null,events:events.map(e=>({event_id:e.id ?? null,event_type:e.event_type ?? null,detected_at:e.detected_at ?? null,confidence_score:typeof e.confidence === 'number' && e.confidence>=0 && e.confidence<=1?e.confidence:null,persistent:e.persistent === true,source:e.source ?? null,evidence_available:!!e.evidence_path}))},provenance:{kind:'input_payload_only',external_sources:[],retrieval_performed:false},limitations:['Datos sintéticos; no describen un incidente real.','Confidence es score, no probabilidad calibrada.','Ausencia de señales no demuestra ausencia de actividad.','Sin verificación independiente ni inferencia de culpabilidad.'],pending_configuration:['llm_gateway_optional','tavily_optional_cited_context'],automatic_notification:false,human_review_required:true},pairedItem:{item:index}};\n});"
+      }
+    },
+    {
+      "id": "cb008ef0-06c0-4a01-b71f-23e4740dfdbf",
+      "name": "Requisitos 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        260
+      ],
+      "parameters": {
+        "content": "## BORRADOR — resumen determinista, NO LLM todavía\nManual → incidente sintético → hechos estructurados por Code. Sin inferencias ni fuentes externas. No notificación automática ni cambio de estado del incidente.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "dbd919dc-38a4-471a-a4ef-7240efc53d1f",
+      "name": "Requisitos 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        260
+      ],
+      "parameters": {
+        "content": "## PLAN: LLM Gateway + Tavily opcional\nAñadir LLM Gateway solo con autorización de consumo y modelo/configuración revisados. Tavily opcional para contexto externo: conservar URL, título, fecha de consulta y extracto que respalda cada afirmación. Separar hechos del incidente de contexto e inferencias; sin resultados, declarar falta de fuentes. Nunca fabricar citas. Tratar contenido externo como datos no confiables. Revisión humana obligatoria; ningún resumen autoriza notificaciones.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Inicio manual": {
+      "main": [
+        [
+          {
+            "node": "Muestra sintética",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Muestra sintética": {
+      "main": [
+        [
+          {
+            "node": "Resumen determinista - no LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
+

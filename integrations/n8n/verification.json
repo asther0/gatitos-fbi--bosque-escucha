@@ -1,0 +1,29 @@
+[
+  {
+    "file": "notificaciones.json",
+    "id": "I91iM6yA5v9jt2zX",
+    "url": "https://jhomar-dev.app.n8n.cloud/workflow/I91iM6yA5v9jt2zX",
+    "active": false,
+    "activeVersionId": null,
+    "activeVersion": null,
+    "nodeCount": 7,
+    "versionId": "9fc34ab4-577c-4b9b-9132-5d607fc59745",
+    "mcp_validated": true,
+    "mcp_readback_verified": true,
+    "remote_execution_performed": false
+  },
+  {
+    "file": "asistente-incidente.json",
+    "id": "pTeB2WRm0xk7bdKZ",
+    "url": "https://jhomar-dev.app.n8n.cloud/workflow/pTeB2WRm0xk7bdKZ",
+    "active": false,
+    "activeVersionId": null,
+    "activeVersion": null,
+    "nodeCount": 5,
+    "versionId": "c8d480b0-4920-4af7-b629-3c1c9023ec16",
+    "mcp_validated": true,
+    "mcp_readback_verified": true,
+    "remote_execution_performed": false
+  }
+]
+

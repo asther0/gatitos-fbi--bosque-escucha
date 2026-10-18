@@ -1,0 +1,140 @@
+{
+  "name": "Bosque Escucha - Notificaciones (borrador)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "b78ce0ee-94f2-4d15-a548-874b4e55d566",
+      "name": "Inicio manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a78de05c-b169-493b-a0d8-deb5a8be4a82",
+      "name": "Muestra sintética",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{json:{\"synthetic\":true,\"source\":\"demo\",\"notification\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"incident_id\":\"00000000-0000-4000-8000-000000000002\",\"channel\":\"n8n\",\"status\":\"queued\",\"approved_by\":\"\",\"contact_id\":null,\"destination\":null},\"incident\":{\"id\":\"00000000-0000-4000-8000-000000000002\",\"node_id\":\"DEMO-01\",\"status\":\"pending_review\",\"priority\":\"medium\",\"title\":\"Incidente sintético\",\"event_ids\":[]},\"contact\":null}}];"
+      }
+    },
+    {
+      "id": "e41f7ac3-b953-40f2-bf12-2553ed630453",
+      "name": "Validar sin enviar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((item, index) => {\n const p = item.json.body ?? item.json;\n const n = p.notification ?? {}, i = p.incident ?? {}, c = p.contact;\n const reasons = [];\n if (p.source === 'demo' || i.source === 'demo' || n.source === 'demo' || i.node_id === 'DEMO-01' || (p.events ?? []).some(e => e.source === 'demo')) reasons.push('demo_rejected');\n if (typeof n.approved_by !== 'string' || !n.approved_by.trim() || !['verified','assigned'].includes(i.status)) reasons.push('not_approved');\n if (!c || c.enabled !== true || typeof c.destination !== 'string' || !/^\\+[1-9]\\d{7,14}$/.test(c.destination) || !['whatsapp','sms'].includes(c.channel)) reasons.push('missing_or_invalid_contact');\n if (c && (n.contact_id !== c.id || n.destination !== c.destination)) reasons.push('contact_mismatch');\n if (!n.id || !i.id || n.incident_id !== i.id) reasons.push('invalid_identity');\n if (n.channel !== 'n8n') reasons.push('not_cloud_owned');\n if (p.synthetic === true) reasons.push('synthetic_rejected');\n return {json:{dry_run:true,status:'pending_configuration',pending_configuration:['authenticated_webhook','atomic_persistent_idempotency','zavu_credentials','provider_proof_callbacks'],validation:{accepted:reasons.length === 0,reasons},dispatch_allowed:false,provider_call_performed:false,provider_id:null,sent_at:null,delivered_at:null,acknowledged_at:null},pairedItem:{item:index}};\n});"
+      }
+    },
+    {
+      "id": "c884145b-452d-4685-be18-cd2a168552be",
+      "name": "Requisitos 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        260
+      ],
+      "parameters": {
+        "content": "## BORRADOR — solo manual\nDatos sintéticos. Siempre dry_run:true y pending_configuration. No proveedor, HTTP, cron ni callback. validation.accepted nunca autoriza un envío. La muestra se rechaza por demo, falta de aprobación y contacto.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "2bbf3267-1663-4b7e-8dbd-68ada83cd4fc",
+      "name": "Requisitos 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        260
+      ],
+      "parameters": {
+        "content": "## PENDIENTE: webhook autenticado\nImplementar bearer N8N_WEBHOOK_SECRET y validar {notification,incident,contact}; Idempotency-Key debe coincidir con notification.id. Rechazar demo, aprobación ausente y contacto inválido. approved_by es el campo persistido; verificar aprobación contra fuente confiable, estado verified/assigned, sector exacto y destinatario aprobado. Solo channel:n8n pertenece a cloud.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "8085299e-43f0-4871-b353-a80345b0ee1b",
+      "name": "Requisitos 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        960,
+        260
+      ],
+      "parameters": {
+        "content": "## PENDIENTE: idempotencia ANTES de Zavu\nReserva persistente y ATÓMICA con clave única notification.id antes de cualquier llamada. No usar memoria, staticData ni lookup+insert no atómico. Concurrentes: un solo propietario. Persistir estado y provider_id; clave idempotente del proveedor si disponible. Timeout ambiguo: reconciliar, nunca reenviar a ciegas. Validar recuperación tras caída.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "b1f1f2ed-b493-485b-80de-0b2acf77ff05",
+      "name": "Requisitos 4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        260
+      ],
+      "parameters": {
+        "content": "## PENDIENTE: Zavu y callbacks\nCredenciales Zavu mediante almacén seguro n8n, nunca código. Configurar endpoint/contrato real antes de añadir proveedor. POST /api/notifications/callback con bearer NOTIFICATION_CALLBACK_SECRET. HTTP 2xx = aceptado solamente. sent y delivered requieren prueba real del proveedor + provider_id. failed requiere fallo real. acknowledged requiere respuesta humana real y actor; no equivale a delivered. Autenticar callbacks, deduplicar y evitar regresiones. No cerrar incidente automáticamente.",
+        "width": 440,
+        "height": 340,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Inicio manual": {
+      "main": [
+        [
+          {
+            "node": "Muestra sintética",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Muestra sintética": {
+      "main": [
+        [
+          {
+            "node": "Validar sin enviar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
+

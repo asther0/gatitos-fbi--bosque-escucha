@@ -7,5 +7,5 @@
     "plugins": [{"name":"next"}], "paths": {"@/*": ["./*"]}
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules", "local-center"]
+  "exclude": ["node_modules", "local-center", "integrations/n8n"]
 }
