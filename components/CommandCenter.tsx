@@ -71,10 +71,13 @@ export default function Home() {
       const body = await res.json();
       if (!res.ok) throw Error(body.error || "No se pudo sincronizar");
       if (body.authenticated) {
-        setSyncedTestCount(body.incidents.filter((i: Incident) => i.node_id === "DEMO-ESP32-WIFI").length);
+        setSyncedTestCount(body.incidents.filter((i: Incident) =>
+          i.node_id === "DEMO-ESP32-WIFI" &&
+          !body.notifications.some((n: { incident_id: string }) => n.incident_id === i.id),
+        ).length);
         if (includeTests) setData(body);
         else {
-          const testNode = (id: string) => id.startsWith("DEMO") || id === "CHECK-LOCAL";
+          const testNode = (id: string) => (id.startsWith("DEMO") && id !== "DEMO-ESP32-WIFI") || id === "CHECK-LOCAL";
           const events = body.events.filter((e: ForestEvent) => !testNode(e.node_id) && e.source !== "demo" && !e.metadata?.synthetic_control);
           const incidents = body.incidents.filter((i: Incident) => !testNode(i.node_id));
           const ids = new Set(incidents.map((i: Incident) => i.id));
@@ -235,8 +238,10 @@ export default function Home() {
       <h3>{i.title}</h3>
       <p>
         <MapPin size={12} />
-        {data?.nodes.find((n) => n.id === i.node_id)?.sector || i.node_id}
-        {isDemo(i) && <span className="demo-label">DEMO</span>}
+        {isPhysicalTest(i)
+          ? data?.nodes.find((n) => n.id === i.node_id)?.name || "Sensor acústico ESP32"
+          : data?.nodes.find((n) => n.id === i.node_id)?.sector || i.node_id}
+        {isDemo(i) && <span className="demo-label">{isPhysicalTest(i) ? "ESP32" : "DEMO"}</span>}
       </p>
       <div className="incident-bottom">
         <span>{statuses[i.status] || i.status}</span>
@@ -384,7 +389,7 @@ export default function Home() {
               configurada.
             </div>
           )}
-          {data?.authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye pruebas" : "Vista de operación"}</strong> · {includeTests ? "Las capturas del ESP32 y los módulos simulados están identificados." : syncedTestCount ? `${syncedTestCount} incidencia${syncedTestCount === 1 ? "" : "s"} del ESP32 sincronizada${syncedTestCount === 1 ? "" : "s"}. Abre las pruebas para revisarlas.` : "Activa la capa de pruebas para ver el ESP32 y los módulos simulados."}</span><button onClick={toggleTests}>{includeTests ? "Ocultar pruebas" : "Ver pruebas del ESP32"}</button></div>}
+          {data?.authenticated && <div className="notice-banner"><span><strong>{includeTests ? "Incluye módulos simulados" : "Vista de operación"}</strong> · {syncedTestCount ? `${syncedTestCount} incidencia${syncedTestCount === 1 ? "" : "s"} del ESP32 sin WhatsApp; revisa la evidencia antes de decidir.` : "Las capturas del ESP32 están visibles. Puedes mostrar otros módulos simulados en el mapa."}</span><button onClick={toggleTests}>{includeTests ? "Ocultar módulos simulados" : "Ver módulos simulados"}</button></div>}
           {!data && !error && (
             <div className="loading">
               <RefreshCw className="spin" size={25} />
@@ -850,12 +855,14 @@ export default function Home() {
                 Prioridad {priorities[selectedIncident.priority]}
               </Badge>
               {isDemo(selectedIncident) && (
-                <Badge tone="amber">{isPhysicalTest(selectedIncident) ? "DEMO · Captura del ESP32" : "DEMO · Sintético"}</Badge>
+                <Badge tone="amber">{isPhysicalTest(selectedIncident) ? "ESP32 · Audio de laboratorio" : "DEMO · Sintético"}</Badge>
               )}
             </div>
             <h2>{selectedIncident.title}</h2>
             <p className="muted">
-              {selectedIncident.node_id} · {time(selectedIncident.created_at)}{" "}
+              {isPhysicalTest(selectedIncident)
+                ? data?.nodes.find((n) => n.id === selectedIncident.node_id)?.name || "Sensor acústico ESP32"
+                : selectedIncident.node_id} · {time(selectedIncident.created_at)}{" "}
               PET
             </p>
             <span className="mono tiny">{selectedIncident.id}</span>
