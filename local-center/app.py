@@ -66,6 +66,7 @@ def ingest(e):
     try:uuid.UUID(eid)
     except ValueError:raise HTTPException(422,'event_id debe ser UUID')
     at=e.detected_at or now(); et=stamp(at)
+    if et>time.time()+60:raise HTTPException(422,'detected_at no puede superar 60 segundos en el futuro')
     at=datetime.fromtimestamp(et,timezone.utc).isoformat().replace('+00:00','Z')
     with connect() as c:
         existing=c.execute('SELECT body FROM events WHERE id=?',(eid,)).fetchone()
@@ -353,7 +354,9 @@ async def raw_capture(file:UploadFile=File(...),node_id:str=Form(...),capture_id
     capture_id=capture_id or uid()
     try:uuid.UUID(capture_id)
     except ValueError:raise HTTPException(422,'capture_id debe ser UUID estable')
-    at=datetime.fromtimestamp(stamp(detected_at or now()),timezone.utc).isoformat().replace('+00:00','Z')
+    timestamp=stamp(detected_at or now())
+    if timestamp>time.time()+60:raise HTTPException(422,'detected_at no puede superar 60 segundos en el futuro')
+    at=datetime.fromtimestamp(timestamp,timezone.utc).isoformat().replace('+00:00','Z')
     uploaded=await upload(file,node_id)
     with connect() as c:
         previous=c.execute('SELECT body FROM captures WHERE id=?',(capture_id,)).fetchone()
@@ -376,3 +379,20 @@ def retry_capture(capture_id:str):
         if error:raise HTTPException(409,error)
         capture.update(analysis_status='queued',analysis_error=None);put(c,'captures',capture)
     return capture
+
+
+@app.post('/api/nodes/{node_id}/heartbeat',dependencies=[Depends(auth)])
+async def heartbeat(node_id:str,request:Request):
+    try:EventIn(node_id=node_id,event_type='ambient',confidence=0)
+    except ValueError:raise HTTPException(422,'node_id inválido')
+    body=await request.json()
+    status=body.get('status','online')
+    if status not in ('online','offline','maintenance'):raise HTTPException(422,'Estado de nodo inválido')
+    battery=body.get('battery_pct')
+    if battery is not None and (isinstance(battery,bool) or not isinstance(battery,(int,float)) or not 0<=battery<=100):raise HTTPException(422,'battery_pct debe estar entre 0 y 100')
+    with connect() as c:
+        node=next((n for n in rows(c,'nodes') if n['id']==node_id),dict(id=node_id,name=node_id,sector='Sin configurar',latitude=None,longitude=None,battery_pct=None,created_at=now()))
+        node.update(last_seen=now(),status=status)
+        if 'battery_pct' in body:node['battery_pct']=battery
+        put(c,'nodes',node);sync_job(c)
+    return {'node':node}
