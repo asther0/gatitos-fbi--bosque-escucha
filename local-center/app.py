@@ -26,7 +26,7 @@ def connect():
     c.execute('PRAGMA journal_mode=WAL')
     return c
 with connect() as c:
-    for table in ('nodes','events','incidents','audit','notifications'):
+    for table in ('nodes','events','incidents','audit','notifications','captures'):
         c.execute(f'CREATE TABLE IF NOT EXISTS {table} (id TEXT PRIMARY KEY, body TEXT NOT NULL)')
     c.execute('CREATE TABLE IF NOT EXISTS cloud_evidence (id TEXT PRIMARY KEY, remote_path TEXT NOT NULL)')
     c.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, kind TEXT, body TEXT, attempts INTEGER DEFAULT 0, next_at REAL DEFAULT 0, error TEXT)')
@@ -116,10 +116,19 @@ async def process_jobs():
                         payload['audit']=[a for a in payload['audit'] if a['incident_id'] in incident_ids]
                         payload['notifications']=[n for n in payload['notifications'] if n['incident_id'] in incident_ids]
                         async with httpx.AsyncClient(timeout=30) as uploader:
+                            # Storage ingestion validates node ownership/existence before accepting a blob.
+                            for start in range(0,len(payload['nodes']),100):
+                                prerequisite={k:[] for k in payload}
+                                prerequisite['nodes']=payload['nodes'][start:start+100]
+                                for n in prerequisite['nodes']:
+                                    for k in ('created_at','last_seen'):
+                                        if n.get(k):n[k]=datetime.fromtimestamp(stamp(n[k]),timezone.utc).isoformat().replace('+00:00','Z')
+                                registered=await uploader.post(target,json=prerequisite,headers={'Authorization':f'Bearer {token}'})
+                                registered.raise_for_status()
                             for e in payload['events']:
                                 path=e.get('evidence_path')
                                 if not path:continue
-                                cache_key=target+'|'+path
+                                cache_key=target+'|'+e['node_id']+'|'+path
                                 with connect() as c:cached=c.execute('SELECT remote_path FROM cloud_evidence WHERE id=?',(cache_key,)).fetchone()
                                 if cached:remote=cached['remote_path']
                                 else:
@@ -164,8 +173,9 @@ async def process_jobs():
 @asynccontextmanager
 async def lifespan(app):
     task=asyncio.create_task(process_jobs())
+    analysis=asyncio.create_task(process_captures())
     yield
-    task.cancel()
+    task.cancel();analysis.cancel()
 app=FastAPI(title='Bosque Escucha · Centro local',lifespan=lifespan)
 @app.get('/')
 def index():return FileResponse(ROOT/'static'/'index.html')
@@ -175,6 +185,7 @@ def health():return {'ok':True,'mode':'local'}
 def dashboard():
     with connect() as c:
         result={t:rows(c,t) for t in ('nodes','events','incidents','notifications','audit')}
+        result['captures']=rows(c,'captures')
         result['jobs']=[dict(r) for r in c.execute('SELECT id,kind,attempts,error,next_at FROM jobs')]
     for n in result['nodes']:
         if n.get('last_seen') and time.time()-stamp(n['last_seen'])>30:n['status']='offline'
@@ -276,3 +287,71 @@ async def notification_callback(request:Request):
         if n!=previous:
             put(c,'notifications',n);audit(c,n['incident_id'],'notification_'+status,{'notification_id':n['id'],'actor':body.get('actor')});sync_job(c)
     return {'notification':n}
+
+
+def analysis_configuration(kind):
+    if os.getenv('AUTO_ANALYZE','').lower() not in ('1','true','yes'):
+        return 'AUTO_ANALYZE deshabilitado; captura guardada sin clasificación.'
+    required=('YAMNET_MODEL_PATH','YAMNET_CLASS_MAP') if kind=='audio' else ('YOLO_MODEL_PATH',)
+    missing=[key for key in required if not os.getenv(key) or not Path(os.environ[key]).exists()]
+    return 'Modelos locales no configurados: '+', '.join(missing) if missing else None
+
+MODEL_CACHE={}
+
+def analyze_capture(capture):
+    from models import AudioDetector,VisionDetector
+    kind=capture['type'];error=analysis_configuration(kind)
+    if error:raise RuntimeError(error)
+    if kind not in MODEL_CACHE:
+        MODEL_CACHE[kind]=AudioDetector(os.environ['YAMNET_MODEL_PATH'],os.environ['YAMNET_CLASS_MAP']) if kind=='audio' else VisionDetector(os.environ['YOLO_MODEL_PATH'])
+    detector=MODEL_CACHE[kind]
+    if kind=='audio':detector.history.clear() # Do not correlate discontinuous clips or different nodes.
+    detections=detector.predict(DATA/'evidence'/capture['path'])
+    for detection in detections:
+        detection['metadata']={**detection.get('metadata',{}),'capture_id':capture['id'],'model':'YAMNet' if kind=='audio' else 'YOLO'}
+        ingest(EventIn(event_id=str(uuid.uuid5(uuid.UUID(capture['id']),detection['event_type'])),node_id=capture['node_id'],detected_at=capture['detected_at'],source='local_center',evidence_path=capture['path'],evidence_type=kind,**detection))
+    return len(detections)
+
+async def process_captures():
+    while True:
+        with connect() as c: pending=[r for r in rows(c,'captures') if r['analysis_status']=='queued']
+        for capture in pending:
+            try:
+                count=await asyncio.to_thread(analyze_capture,capture)
+                capture.update(analysis_status='complete',detections=count,analysis_error=None)
+            except Exception as exc:
+                capture.update(analysis_status='failed',analysis_error=f'{type(exc).__name__}: {exc}')
+            with connect() as c:put(c,'captures',capture)
+        await asyncio.sleep(1)
+
+@app.post('/api/raw',dependencies=[Depends(auth)])
+async def raw_capture(file:UploadFile=File(...),node_id:str=Form(...),capture_id:str|None=Form(None),detected_at:str|None=Form(None)):
+    # Validate metadata before storing, then persist evidence even if inference is unavailable.
+    try:EventIn(node_id=node_id,event_type='ambient',confidence=0)
+    except ValueError:raise HTTPException(422,'node_id inválido')
+    capture_id=capture_id or uid()
+    try:uuid.UUID(capture_id)
+    except ValueError:raise HTTPException(422,'capture_id debe ser UUID estable')
+    at=datetime.fromtimestamp(stamp(detected_at or now()),timezone.utc).isoformat().replace('+00:00','Z')
+    uploaded=await upload(file,node_id)
+    with connect() as c:
+        previous=c.execute('SELECT body FROM captures WHERE id=?',(capture_id,)).fetchone()
+        if previous:
+            previous=json.loads(previous['body'])
+            if previous['node_id']!=node_id or previous['path']!=uploaded['path']:raise HTTPException(409,'capture_id ya corresponde a otra captura')
+            return previous
+        error=analysis_configuration(uploaded['type'])
+        capture=dict(id=capture_id,capture_id=capture_id,node_id=node_id,**uploaded,detected_at=at,created_at=now(),analysis_status='blocked' if error else 'queued',analysis_error=error,detections=None)
+        put(c,'captures',capture)
+        node=next((n for n in rows(c,'nodes') if n['id']==node_id),dict(id=node_id,name=node_id,sector='Sin configurar',latitude=None,longitude=None,battery_pct=None,created_at=now()))
+        node.update(status='online',last_seen=now());put(c,'nodes',node);sync_job(c)
+    return capture
+
+@app.post('/api/captures/{capture_id}/retry',dependencies=[Depends(auth)])
+def retry_capture(capture_id:str):
+    with connect() as c:
+        capture=get(c,'captures',capture_id)
+        error=analysis_configuration(capture['type'])
+        if error:raise HTTPException(409,error)
+        capture.update(analysis_status='queued',analysis_error=None);put(c,'captures',capture)
+    return capture

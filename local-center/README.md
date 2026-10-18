@@ -104,3 +104,32 @@ Reintentos limitados: 8 intentos por trabajo con espera exponencial hasta 300 s.
 `python smoke_sync.py` verifica con nube HTTP simulada desconexión/reconexión, un único upload persistido, paths privados y locales separados y deduplicación UUID. No necesita Internet.
 
 `python smoke.py` usa SQLite y archivos temporales, sin Internet ni modelos. Comprueba autorización, deduplicación, correlación alta, revisión, cola única y rechazo de transiciones inválidas. No prueba ESP32, inferencia real ni entrega WhatsApp. Las pruebas de aceptación física, cortes de WAN, 20 ensayos y ciclo WhatsApp real siguen pendientes con el equipo.
+
+## Arranque con la configuración del proyecto
+
+```bash
+python run.py --cloud-url https://TU-PROYECTO.vercel.app
+# O un archivo de entorno explícito:
+python run.py --env-file /ruta/repo/.env.local
+```
+
+`run.py` carga `.env.local` del repo y `local-center/.env` solo en el proceso Python; las variables existentes del shell tienen prioridad. No imprime ni expone credenciales. Escucha exclusivamente `127.0.0.1:8765`; `--port` permite cambiar puerto. No se necesita exponer un puerto a Internet para recibir USB.
+
+## Captura cruda automática
+
+El bridge receptor debe enviar `POST /api/raw` con Bearer `LOCAL_CENTER_TOKEN` y multipart `file`, `node_id`, `capture_id` (UUID estable por captura) y opcional `detected_at` ISO. Admite WAV mono y JPEG/PNG, máximo 4 MB. Primero guarda la evidencia y registra la captura; luego clasifica asincrónicamente si los modelos están habilitados. El reintento del mismo UUID/archivo devuelve la captura existente. UUID reutilizado para otra captura devuelve 409.
+
+```text
+AUTO_ANALYZE=1
+YAMNET_MODEL_PATH=/ruta/yamnet
+YAMNET_CLASS_MAP=/ruta/yamnet_class_map.csv
+YOLO_MODEL_PATH=/ruta/yolo11n.pt
+```
+
+Sin configuración/modelos, responde `analysis_status: blocked` y `analysis_error` explícito, conservando la evidencia. Un fallo de dependencia o inferencia queda `failed` en la captura y aparece en el dashboard; no genera eventos simulados. Con modelos, el worker produce eventos reales con UUID derivados de captura/clase para evitar duplicaciones. Sin detecciones, la captura queda `complete` con cero detecciones. Para reintentar tras corregir configuración: reiniciar proceso y `POST /api/captures/{capture_id}/retry` autenticado.
+
+Los modelos se cargan una vez por proceso y el análisis se ejecuta en un hilo para mantener disponible la API. La persistencia de audio se evalúa dentro de cada clip; enviar WAV mono 16 kHz de al menos 2 segundos, preferiblemente 3 segundos. No se mezclan ventanas de nodos diferentes o clips discontinuos. Los parámetros iniciales requieren calibración con Bill.
+
+El sync registra primero los nodos en nube, sube los blobs después y finalmente sincroniza eventos/incidentes. La cache de upload está identificada por destino cloud, nodo y hash/ruta local. Los callbacks/cloud no dependen de que los archivos tengan una URL pública. Los límites del contrato se respetan con lotes ordenados por dependencias.
+
+No hay borrado automático de evidencia ni retención implícita. Antes del piloto, definir la retención con el equipo y una tarea explícita de limpieza; esta versión conserva los archivos para no eliminar evidencia pendiente de revisión o sincronización.
