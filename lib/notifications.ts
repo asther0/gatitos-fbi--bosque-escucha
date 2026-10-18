@@ -3,10 +3,10 @@ import { database } from "./supabase";
 import { check } from "./data";
 
 export async function dispatchNotification(id: string) {
-  if (!process.env.N8N_WEBHOOK_URL)
+  if (!process.env.N8N_WEBHOOK_URL || !process.env.N8N_WEBHOOK_SECRET)
     return {
       accepted: false,
-      message: "Cola guardada. Falta configurar N8N_WEBHOOK_URL.",
+      message: "Cola guardada. Falta configurar webhook n8n y autenticación.",
     };
   const db = database();
   const claim = await db.rpc("be_claim_notification", { target: id });
@@ -32,6 +32,8 @@ export async function dispatchNotification(id: string) {
       signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) throw new Error(`Webhook respondió ${response.status}`);
+    const receipt = await response.json();
+    if (receipt.accepted !== true) return { accepted: false, message: `Proveedor pendiente: ${receipt.status || "sin confirmación"}. Revisar ejecución n8n.` };
     return {
       accepted: true,
       message:
@@ -44,7 +46,8 @@ export async function dispatchNotification(id: string) {
         status: "failed",
         last_error: error instanceof Error ? error.message : "Fallo webhook",
       })
-      .eq("id", id);
+      .eq("id", id)
+      .in("status", ["queued", "blocked", "failed"]);
     check(result.error);
     return {
       accepted: false,
