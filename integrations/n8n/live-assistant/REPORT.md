@@ -1,48 +1,40 @@
-# Asistente live: bloqueado, no publicado
+# Asistente n8n: inferencia real validada; publicación pendiente de Header Auth
 
-Revisión 2026-10-18 mediante n8n-bosque MCP. Workflow existente: pTeB2WRm0xk7bdKZ.
-Editor: https://jhomar-dev.app.n8n.cloud/workflow/pTeB2WRm0xk7bdKZ
+Verificado el 2026-10-18. Workflow [pTeB2WRm0xk7bdKZ](https://jhomar-dev.app.n8n.cloud/workflow/pTeB2WRm0xk7bdKZ).
 
-## Estado real
-- Workflow remoto sin cambios: active=false, activeVersionId=null; sigue siendo el borrador determinista original.
-- update_workflow fue rechazado: `MCP tool call requires approval, but approval policy is never`. Relectura confirmó que no se añadió el nodo Gateway.
-- No se publicó, no se ejecutó LLM ni prueba remota, no se compraron créditos, no se recargó saldo, no se enviaron notificaciones.
-- Gateway available=true; el panel de n8n muestra $2.00. La herramienta MCP no devuelve balance ni configuración de recarga.
-- list_credentials devolvió cero credenciales. No se extrajeron valores secretos.
-- No existe operación create_credentials/create_credential en el conjunto de herramientas MCP expuesto. setNodeCredential solo vincula una credencial existente.
-- explore_node_resources requiere credentialId accesible. No hay uno disponible.
-- discover_agent_assets devolvió catálogo OpenAI con verified=false: no equivale a modelos habilitados por Gateway. No se seleccionó ni inventó modelo.
+## Resultado comprobado
 
-## Archivos
-- remote-observed.json: export sin secretos del estado remoto realmente observado.
-- workflow.prepared.json y workflow.prepared.sdk.ts: propuesta local, NO export de una implementación remota. Webhook y LLM deshabilitados, modelo vacío y credenciales sin asignar. No apta para publicar todavía.
-- synthetic-request.json: payload sintético para una única prueba futura, nunca enviado.
-- verify.mjs: comprobaciones locales de contrato, límites y rechazo de salida inválida.
-La validación estructural MCP de los cinco nodos y del grafo pasó; no prueba credenciales, inferencia real ni autenticación.
+- El bloqueo de aprobación MCP de la sesión anterior ya no se reproduce: las actualizaciones se guardaron correctamente.
+- El borrador remoto contiene webhook autenticado → validación de entrada → GPT-4o-mini Gateway → validación de respuesta → respuesta JSON.
+- Se eligió `gpt-4o-mini` desde el catálogo real de Gateway en el editor. El panel mostró saldo $2.00; no hubo compra ni recarga.
+- La ejecución manual **3** terminó `success` a las 05:25:53 UTC: llamada real al modelo `gpt-4o-mini-2024-07-18`, con 399 tokens de entrada y 130 de salida. Solo la entrada webhook fue fijada como muestra sintética; la salida LLM no fue simulada.
+- La respuesta reconoce datos ficticios, expresa score 0.83, recomienda revisión humana y devuelve `sources: []`. Evidencia mínima: `synthetic-live-result.json`.
+- Las ejecuciones 1 y 2 detectaron una incompatibilidad real: con JSON schema el nodo n8n entrega `content.text` como objeto. Se corrigió el validador para aceptar ese objeto o una cadena JSON y se añadieron pruebas de ambas formas.
+- El coste monetario de las llamadas no figura en la respuesta MCP; no se inventa un coste. La ejecución 2 consumió 364 tokens de entrada y 138 de salida. La ejecución 1 no conservó datos por la política inicial de retención.
 
-## URL y credenciales pendientes
-URL propuesta, no activa ni comprobada:
-https://jhomar-dev.app.n8n.cloud/webhook/bosque-incidente-asistente
+## Estado pendiente
 
-Crear en n8n una credencial de tipo httpHeaderAuth: Name=Authorization, Value=Bearer <secreto aleatorio>. Nunca guardar el secreto en export, código ni reporte. Asociarla al Webhook.
-La aplicación necesita N8N_ASSISTANT_WEBHOOK_URL con la URL publicada y N8N_ASSISTANT_WEBHOOK_SECRET con el mismo secreto SIN el prefijo Bearer. Configurar solo en servidor.
-Para el LLM, añadir el nodo OpenAI text/response v2.3 con asignación Gateway administrada; descubrir modelSearch con la credencial administrada real. Seleccionar un modelo de texto económico de la lista confirmada, consultar coste y limitar salida. No usar API keys de otro proveedor ni recargar.
-El presupuesto de $2 no tiene control acumulado local; verificar límite/prepago y ausencia de recarga automática en Gateway antes de publicar. No afirmar que maxTokens garantiza un límite total de gasto.
+El workflow sigue **sin publicar** (`active=false`, sin versión activa). El webhook está deshabilitado y exige `headerAuth`; falta crear y asociar la credencial. No se ha probado tráfico HTTP autenticado ni la integración web de producción. La inferencia manual no demuestra que el endpoint público esté activo.
 
-## Integración web y contrato
-La ruta actual app/api/assistant/route.ts usa las variables anteriores y Authorization bearer, pero NO envía mode: "live". Añadirlo en una tarea con permiso para editar fuera de esta carpeta. Actualmente la propuesta rechazaría ese payload.
-Entrada POST JSON: {incident:{id,title,summary,priority,status,node_id},events:[{event_type,confidence,persistent,detected_at}],mode:"live"}.
-Se aceptan hasta 30 eventos y 24,000 caracteres JSON; solo se transmite al modelo la lista explícita de campos del contrato. Los encabezados y campos extra no se propagan.
-Salida: {summary,recommended_action,limitations,sources:[],model?}. Modelo tomado de la respuesta real del proveedor. Sin herramientas de búsqueda. Nunca notifica.
-Prompt exige hechos atribuidos a entrada, no inferir ilegalidad ni identidad, score no probabilidad de delito, metadatos sin audio/imágenes y decisión humana. El validador rechaza fuentes no vacías y añade límites fijos. El esquema no demuestra veracidad semántica: revisar la prueba real.
-El error de validación de entrada detiene el workflow antes del LLM; todavía devuelve error n8n genérico, no un HTTP 400 personalizado.
+La política de la herramienta de navegador requiere confirmación al crear credenciales persistentes. La solicitud al usuario está pendiente; no se guardaron credenciales ni se retiró la autenticación para continuar.
 
-## Cómo terminar
-1. Resolver la política de aprobación de escritura MCP; no eludirla por UI o APIs alternativas.
-2. Provisionar Header Auth por la UI y asignar su ID, sin revelar su valor.
-3. Confirmar modelo Gateway y coste, completar configuración y habilitar nodos.
-4. Ajustar mode en la ruta web y configurar sus variables de entorno de servidor.
-5. Verificar autenticación rechazada sin bearer/incorrecto y ejecutar una sola prueba sintética con el contrato. Esta sesión no pudo hacerla.
-6. Publicar solo con autenticación efectiva y LLM real, relectura de versión activa y revisión de respuesta.
-No se hizo commit ni se editaron archivos fuera de esta carpeta.
+URL prevista: `https://jhomar-dev.app.n8n.cloud/webhook/bosque-incidente-asistente`.
+Crear Header Auth con `Name=Authorization`, `Value=Bearer <secreto compartido>`. Guardar en servidor `N8N_ASSISTANT_WEBHOOK_URL` y `N8N_ASSISTANT_WEBHOOK_SECRET` (sin prefijo Bearer). El secreto nunca va en estos archivos.
 
+## Archivos y validación
+
+- `remote-observed.json`: estado remoto releído después de la prueba, sin valores secretos.
+- `workflow.prepared.json` y `.sdk.ts`: configuración reproducible sin credenciales, con webhook deshabilitado.
+- `synthetic-request.json`: entrada ficticia usada realmente en las pruebas manuales.
+- `verify.mjs`: validación del contrato, límites, rechazo de entradas/salidas inválidas y compatibilidad de JSON estructurado.
+- Validación MCP de nodos y SDK: correcta, cinco nodos. Verificación local: correcta.
+
+El límite de salida es 650 tokens y el workflow tiene timeout de 25 segundos. No usa herramientas de búsqueda, audio o imágenes y no envía notificaciones. Retención de ejecuciones de producción y manuales restaurada a `none`/false; las ejecuciones 2 y 3 se conservaron temporalmente para diagnosticar exclusivamente la muestra sintética.
+
+## Finalización tras credencial
+
+1. Asociar la credencial Header Auth y habilitar el webhook.
+2. Publicar, verificar versión activa y rechazos sin bearer/con bearer incorrecto.
+3. Configurar las dos variables Vercel y realizar una prueba desde `/api/assistant` con una entrada autorizada.
+
+No repetir la selección de modelo ni sustituir el resumen manual por una afirmación de integración productiva.

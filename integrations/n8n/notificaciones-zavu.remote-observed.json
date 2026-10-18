@@ -1,0 +1,117 @@
+{
+  "id": "I91iM6yA5v9jt2zX",
+  "name": "Bosque Escucha - Notificaciones Zavu",
+  "active": false,
+  "isArchived": false,
+  "versionId": "d2222a9f-2a1c-40b7-921e-42e732972986",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 2,
+  "createdAt": "2026-10-18T04:58:06.134Z",
+  "updatedAt": "2026-10-18T05:22:08.662Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "saveManualExecutions": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "executionTimeout": 30
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Webhook autenticado que solicita al adaptador verificar aprobación persistida, reservar idempotencia y despachar WhatsApp por Zavu; no reintentos automáticos.",
+  "scopes": [
+    "execution:delete",
+    "execution:list",
+    "execution:read",
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:import",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "canExecute": true,
+  "connections": {
+    "Solicitud aprobada": {
+      "main": [
+        [
+          {
+            "node": "Despachar con reserva persistente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Solicitud aprobada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bosque-notificaciones",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "disabled": true,
+      "webhookId": "7e5d97b6-32a3-468d-b195-355e018abdd1"
+    },
+    {
+      "id": "send",
+      "name": "Despachar con reserva persistente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bosque-escucha.vercel.app/api/notifications/zavu/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.body.notification.id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { notification_id: $json.body.notification.id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

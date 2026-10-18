@@ -1,0 +1,38 @@
+{
+  "execution": {
+    "id": "3",
+    "workflowId": "pTeB2WRm0xk7bdKZ",
+    "mode": "manual",
+    "status": "success",
+    "startedAt": "2026-10-18T05:25:51.095Z",
+    "stoppedAt": "2026-10-18T05:25:53.033Z",
+    "retryOf": null,
+    "retrySuccessId": null,
+    "waitTill": null
+  },
+  "synthetic": true,
+  "liveModelCall": true,
+  "tokenUsage": {
+    "inputTokens": 399,
+    "outputTokens": 130
+  },
+  "response": {
+    "summary": "Se reporta un evento de tipo 'motosierra' con un score de 0.83, pero se aclara que los datos son ficticios y no representan un incidente real.",
+    "recommended_action": "Revisión humana de la evidencia para determinar la validez de los datos y registro de una decisión por un operador. La decisión final requiere revisión humana.",
+    "limitations": [
+      "Los datos son ficticios y no representan un incidente real.",
+      "No hay información adicional sobre el contexto del evento.",
+      "No se puede establecer causalidad basada en datos sintéticos.",
+      "El confidence score no implica veracidad del incidente.",
+      "Falta un registro de eventos previos o posteriores.",
+      "Solo metadatos proporcionados; no se escuchó audio ni se observaron imágenes.",
+      "Confidence es un score del detector, no probabilidad de ilegalidad ni evidencia de identidad.",
+      "Sin búsqueda ni verificación externa; fuentes vacías.",
+      "Toda decisión requiere revisión humana. No se enviaron notificaciones."
+    ],
+    "sources": [],
+    "model": "gpt-4o-mini-2024-07-18"
+  },
+  "monetaryCost": null,
+  "monetaryCostReason": "Not exposed by MCP execution result"
+}
