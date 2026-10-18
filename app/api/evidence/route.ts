@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   isDeviceAuthorized,
   isCenterAuthorized,
@@ -38,7 +39,11 @@ export async function POST(request: Request) {
       bytes[0] === 137 &&
       bytes[1] === 80 &&
       bytes[2] === 78 &&
-      bytes[3] === 71
+      bytes[3] === 71 &&
+      bytes[4] === 13 &&
+      bytes[5] === 10 &&
+      bytes[6] === 26 &&
+      bytes[7] === 10
     ) {
       extension = "png";
       mime = "image/png";
@@ -62,12 +67,18 @@ export async function POST(request: Request) {
       .eq("id", node)
       .single();
     check(found.error);
-    const path = `${node}/${crypto.randomUUID()}.${extension}`;
+    const path = `${node}/${createHash("sha256").update(bytes).digest("hex")}.${extension}`;
     const { error } = await db.storage
       .from("be-evidence")
       .upload(path, bytes, { contentType: mime, upsert: false });
-    check(error);
-    return Response.json({ path, type }, { status: 201 });
+    const duplicate =
+      error &&
+      String((error as { statusCode?: string | number }).statusCode) === "409";
+    if (!duplicate) check(error);
+    return Response.json(
+      { path, type, idempotent: Boolean(duplicate) },
+      { status: duplicate ? 200 : 201 },
+    );
   } catch (e) {
     return failure(e, 400);
   }
@@ -83,10 +94,10 @@ export async function GET(request: Request) {
       .storage.from("be-evidence")
       .createSignedUrl(path, 60);
     check(error);
-    return Response.json(
-      { url: data!.signedUrl, expires_in: 60 },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    return new Response(null, {
+      status: 307,
+      headers: { Location: data!.signedUrl, "Cache-Control": "no-store" },
+    });
   } catch (e) {
     return failure(e);
   }

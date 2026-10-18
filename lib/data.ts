@@ -1,6 +1,7 @@
 import "server-only";
 import { database } from "./supabase";
 import { z } from "zod";
+import { metadataSchema, PayloadError } from "./payload";
 export const eventSchema = z.object({
   event_id: z.string().uuid().optional(),
   node_id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
@@ -11,7 +12,7 @@ export const eventSchema = z.object({
   source: z
     .enum(["device", "manual", "demo", "local_center"])
     .default("device"),
-  metadata: z.record(z.string(), z.unknown()).default({}),
+  metadata: metadataSchema.default({}),
   evidence_path: z.string().max(300).nullable().optional(),
   evidence_type: z.enum(["image", "audio"]).nullable().optional(),
 });
@@ -25,7 +26,8 @@ class DatabaseFailure extends Error {
 }
 export function failure(error: unknown, status = 500) {
   if (error instanceof z.ZodError || error instanceof SyntaxError) status = 400;
-  if (error instanceof DatabaseFailure) status = error.status;
+  if (error instanceof DatabaseFailure || error instanceof PayloadError)
+    status = error.status;
   return Response.json(
     {
       error:

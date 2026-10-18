@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
         provider_id: z.string().max(300).optional(),
         actor: z.string().max(200).optional(),
       })
-      .parse(await request.json());
+      .parse(await readJson(request));
     if (
       (body.status === "sent" || body.status === "delivered") &&
       !body.provider_id

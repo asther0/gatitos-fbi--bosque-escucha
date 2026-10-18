@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { isDeviceAuthorized, isCenterAuthorized } from "@/lib/auth";
 import { database } from "@/lib/supabase";
 import { check, failure } from "@/lib/data";
@@ -16,7 +17,7 @@ export async function POST(
         battery_pct: z.number().min(0).max(100).nullable().optional(),
         status: z.enum(["online", "offline", "maintenance"]).default("online"),
       })
-      .parse(await request.json());
+      .parse(await readJson(request));
     const { data, error } = await database()
       .from("be_nodes")
       .update({ ...body, last_seen: new Date().toISOString() })

@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/payload";
 import { requireOperator } from "@/lib/auth";
 import { ingest, failure } from "@/lib/data";
 import { z } from "zod";
@@ -7,7 +8,7 @@ export async function POST(request: Request) {
   try {
     const { scenario } = z
       .object({ scenario: z.enum(["chainsaw", "combined", "ambient"]) })
-      .parse(await request.json());
+      .parse(await readJson(request));
     const base = {
       node_id: "DEMO-01",
       confidence: 0.88,
