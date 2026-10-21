@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { IncidentAssistant } from "@/components/IncidentAssistant";
+import { NodeContextMemory } from "@/components/NodeContextMemory";
 import { publicDemo } from "@/lib/public-demo";
 import { OperationsSettings } from "@/components/OperationsSettings";
 import { NotificationReceipt } from "@/components/NotificationReceipt";
@@ -873,6 +874,13 @@ export default function Home() {
                 Indicios para inspección; no confirman tala ilegal ni identidad.
               </small>
             </div>
+            {authenticated && (
+              <NodeContextMemory
+                key={`context-${selectedIncident.id}`}
+                incident={selectedIncident}
+                sensor={data?.nodes.find((n) => n.id === selectedIncident.node_id)?.name || selectedIncident.node_id}
+              />
+            )}
             <IncidentAssistant key={selectedIncident.id} incident={selectedIncident} authenticated={authenticated} />
             <h3>Evidencia asociada</h3>
             {data?.events
