@@ -20,7 +20,8 @@ export function createSession(): string {
 export function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return true;
-  try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
+  // Next dev may rewrite request.url to localhost; the browser-set Host is the address it targeted.
+  try { const host = new URL(origin).host; return host === new URL(request.url).host || host === request.headers.get("host"); } catch { return false; }
 }
 export function isOperator(request: Request): boolean {
   if (!secret()) return false;

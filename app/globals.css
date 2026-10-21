@@ -1535,3 +1535,35 @@ dd {
 .schematic-sim-module.powered-off i { background:#737b78; box-shadow:0 0 0 4px #737b781c; }
 .schematic-sim-module small { font-size:8px; }
 @media (prefers-reduced-motion: reduce) { .chainsaw-alert-marker,.schematic-node-alert i { animation:none; } }
+.context-memory label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  margin-top: 12px;
+}
+.context-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  display: grid;
+  gap: 8px;
+}
+.context-list li {
+  display: grid;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.context-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.context-off {
+  margin: 12px 0;
+}

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:unit": "tsx --test tests/*.test.ts"
+    "test:unit": "tsx --conditions=react-server --test tests/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",

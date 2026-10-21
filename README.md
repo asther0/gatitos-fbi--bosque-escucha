@@ -84,6 +84,12 @@ La detección local y la sincronización **no envían WhatsApp automáticamente*
 
 Los simulacros de Kapso usaron contactos temporales que después se desactivaron. El proveedor vigente es Kapso; Zavu corresponde al intento anterior. La preparación del uso operativo se sigue en [el issue de WhatsApp](https://github.com/asther0/gatitos-fbi--bosque-escucha/issues/4).
 
+### Contexto revisado del sensor (opcional)
+
+En la ficha del incidente, el operador puede guardar una nota breve sobre el sensor, por ejemplo una fuente de ruido conocida. La nota se muestra en las siguientes incidencias de **ese mismo sensor** y se puede corregir o eliminar. Se guarda solo al pulsar **Guardar contexto del sensor**. Es referencia para el equipo: no cambia prioridad, estado, alertas ni evidencia.
+
+Usa Atomic Memory desde el servidor. Configura `ATOMICMEMORY_API_URL` y `ATOMICMEMORY_API_KEY` en `.env.local`; sin ellas la función queda desactivada. Contrato en [docs/API.md](docs/API.md). Para probarla sin credenciales, `npx tsx scripts/atomic-memory-fixture-demo.ts` levanta servidores **FIXTURE** locales de Supabase y Atomic Memory con datos sintéticos e imprime el comando para iniciar la web.
+
 ## Explorar la entrega pública
 
 Abre **[greenear](https://bosque-escucha.vercel.app)** y pulsa **Probar el flujo**. La demo pública no requiere contraseña: permite explorar incidentes y simular decisiones en la memoria del navegador. No modifica operaciones reales ni envía mensajes. Los datos operativos requieren la contraseña de operador, compartida por el equipo de forma privada.
