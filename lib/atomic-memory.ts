@@ -46,7 +46,7 @@ const searchSchema = z.object({
   })).default([]),
 });
 const ingestSchema = z.object({ stored_memory_ids: z.array(z.string()) });
-const deleteSchema = z.object({ success: z.literal(true) });
+const deleteSchema = z.object({ deleted: z.literal(true) });
 
 async function call(config: MemoryConfig, path: string, init: { method: string; body?: unknown }): Promise<unknown> {
   let response: Response;

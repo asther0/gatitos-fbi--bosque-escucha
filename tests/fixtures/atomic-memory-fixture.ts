@@ -52,7 +52,7 @@ export async function startAtomicMemoryFixture({ apiKey, port = 0 }: { apiKey: s
       const index = memories.findIndex(m => m.id === match[1] && m.user_id === url.searchParams.get("user_id"));
       if (index < 0) return send(404, { error: "Memory not found" });
       memories.splice(index, 1);
-      return send(200, { success: true });
+      return send(200, { deleted: true, id: match[1] });
     }
     send(404, { error: "not found" });
   });
