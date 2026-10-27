@@ -39,6 +39,13 @@ def wifi_mask():
         return None
 
 
+def same_subnet(host, mask, device_ip):
+    try:
+        return bool(host and mask) and ipaddress.ip_address(device_ip) in ipaddress.ip_network(f'{host}/{mask}', strict=False)
+    except ValueError:
+        return False
+
+
 def align_center(fd, state):
     # Association can precede the DHCP lease when switching from the hotspot.
     # Keep the user's single click pending while macOS obtains its address.
@@ -60,10 +67,7 @@ def align_center(fd, state):
     if fields.get('wifi') != 'connected':
         raise HTTPException(409, 'El ESP32 perdió el Wi-Fi. Enciende el TP-Link y revisa «Configurar Wi-Fi».')
     mask = wifi_mask()
-    try:
-        same_network = bool(mask) and ipaddress.ip_address(fields.get('ip', '')) in ipaddress.ip_network(f'{host}/{mask}', strict=False)
-    except ValueError:
-        same_network = False
+    same_network = same_subnet(host, mask, fields.get('ip', ''))
     if not same_network:
         raise HTTPException(409, 'La Mac está en otra red. Conéctala al Wi-Fi del TP-Link y vuelve a probar.')
     if fields.get('ip') == host:
@@ -157,8 +161,24 @@ def install_controls(app, auth, token, connect, rows):
     dependencies = [Depends(auth), Depends(local_only)]
 
     @app.get('/api/mvp/status', dependencies=dependencies)
-    def status():
-        return {'ip': wifi_ip(), 'ports': ports(), 'busy': LOCK.locked()}
+    def status(probe: bool = False):
+        host, available = wifi_ip(), ports()
+        with connect() as c:
+            captures = [item for item in rows(c, 'captures') if item.get('node_id') == 'DEMO-ESP32-WIFI']
+        result = {'ip': host, 'ports': available, 'busy': LOCK.locked(),
+                  'last_capture_at': max((item['created_at'] for item in captures), default=None),
+                  'listening': False if not available else None,
+                  'same_network': False if not available else None}
+        if probe and available and not result['busy']:
+            try:
+                with board() as (_, state):
+                    fields = dict(part.split('=', 1) for part in state.split() if '=' in part)
+                result['listening'] = fields.get('auto') == 'on'
+                result['same_network'] = (fields.get('wifi') == 'connected' and
+                    same_subnet(host, wifi_mask(), fields.get('ip', '')) and fields.get('center') == host)
+            except HTTPException as exc:
+                result['board_error'] = exc.detail
+        return result
 
     @app.post('/api/mvp/configure', dependencies=dependencies)
     def configure(body: Configure):

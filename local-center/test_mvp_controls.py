@@ -33,6 +33,23 @@ class MVPTests(unittest.TestCase):
         with TestClient(self.app, client=('192.168.0.102', 1000)) as remote:
             self.assertEqual(remote.post('/api/mvp/action', headers=self.headers, json={'action': 'test'}).status_code, 403)
 
+    def test_status_exposes_board_listening_and_network_mismatch(self):
+        @contextmanager
+        def board():
+            yield 99, 'STATUS wifi=connected ip=192.168.0.101 center=192.168.0.100 auto=on protocol=2'
+        with patch.object(controls, 'board', board), patch.object(controls, 'ports', return_value=['/dev/cu.usbserial-130']), patch.object(controls, 'wifi_ip', return_value='172.20.10.7'):
+            response = self.client.get('/api/mvp/status?probe=true', headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.json()['listening'])
+        self.assertFalse(response.json()['same_network'])
+
+    def test_status_with_disconnected_board_does_not_claim_active_listening(self):
+        with patch.object(controls, 'ports', return_value=[]), patch.object(controls, 'wifi_ip', return_value='172.20.10.7'), patch.object(controls, 'board') as board:
+            response = self.client.get('/api/mvp/status?probe=true', headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertFalse(response.json()['listening'])
+        board.assert_not_called()
+
     def test_test_sound_overlaps_wifi_capture_and_restores_auto(self):
         trace = []
         @contextmanager

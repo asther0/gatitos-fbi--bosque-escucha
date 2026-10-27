@@ -8,7 +8,7 @@
 <section id="mvp" class="card" hidden aria-label="Control del micrófono">
 <div class="mvp-heading"><h2>Prueba de sonido</h2><span id="mvp-device" class="device-pill">Buscando ESP32…</span></div>
 <p class="intro">Conecta la Mac al TP-Link y acerca el micrófono al altavoz.</p>
-<div class="row"><button id="mvp-start">Activar escucha</button><button id="mvp-stop">Detener escucha</button></div>
+<div class="row"><button id="mvp-start">Activar escucha</button><button id="mvp-stop" hidden>Detener escucha</button></div>
 <p id="mvp-status" role="status" aria-live="polite">Graba 3 segundos cada 5 segundos. Pulsa «Activar escucha» una vez.</p>
 <div id="mvp-result" aria-live="polite"></div>
 <details id="capture-details" hidden><summary>Escuchar grabación y ver análisis</summary><audio id="mvp-evidence" controls hidden></audio><div id="mvp-scores"></div></details>
@@ -27,7 +27,7 @@
 <details><summary>Simulaciones sin micrófono</summary><div class="row"><button id="demo">Crear demo combinada</button><button id="ambient">Demo ruido ambiente</button></div></details>
 </details></section></main>
 <script>
-let token='',data={},selected=null,urls=[],incidentAudioUrls=[],incidentListSignature='',watchedCapture=null,mvpBusy=false,captureAudioId=null,captureAudioURL=null,mvpAvailable=false;
+let token='',data={},selected=null,urls=[],incidentAudioUrls=[],incidentListSignature='',watchedCapture=null,mvpBusy=false,captureAudioId=null,captureAudioURL=null,mvpAvailable=false,mvpListening=null,lastMvpProbe=0;
 const el=id=>document.getElementById(id),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sessionKey='bosque.local.token';
 const limaDate=new Intl.DateTimeFormat('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
@@ -87,9 +87,25 @@ el('verify').onclick=()=>change({status:'verified'});el('discard').onclick=()=>c
 for(const e of events){const box=document.createElement('div');box.className='card';box.innerHTML=`<b>${escape(e.event_type)}</b> · score ${escape(e.confidence)} · ${escape(e.source)}<p>${escape(inLima(e.detected_at))}</p><p class="muted">Score del modelo, no probabilidad calibrada. ${e.persistent?'Señal persistente.':''}</p>`;el('evidences').appendChild(box);if(e.evidence_path){const r=await fetch('/api/evidence?path='+encodeURIComponent(e.evidence_path),{headers:{Authorization:'Bearer '+token}});if(r.ok){const url=URL.createObjectURL(await r.blob());urls.push(url);const media=document.createElement(e.evidence_type==='audio'?'audio':'img');media.src=url;if(e.evidence_type==='audio')media.controls=true;else media.alt='Evidencia del nodo';box.appendChild(media)}}}}
 el('enter').onclick=()=>run(async()=>{token=el('token').value;el('token').value='';await refresh();await setupMvp()});el('refresh').onclick=()=>run(refresh);el('demo').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'combined'});await refresh()});el('ambient').onclick=()=>run(async()=>{await api('/api/demo','POST',{scenario:'ambient'});await refresh()});
 
-async function setupMvp(){
+function showListeningState(state){
+  if(typeof state.listening==='boolean')mvpListening=state.listening;
+  el('mvp-start').hidden=mvpListening===true;
+  el('mvp-stop').hidden=mvpListening!==true;
+  el('mvp-start').disabled=!state.ports.length;
+  if(mvpBusy)return;
+  if(!state.ports.length){el('mvp-status').textContent='ESP32 desconectado. Conéctalo por USB para escuchar.';return;}
+  if(state.board_error){el('mvp-status').textContent=conciseStatus(state.board_error);return;}
+  if(mvpListening===true){
+    if(state.same_network===false){el('mvp-status').textContent='Escucha activada en el ESP32, pero la Mac no está en su red TP-Link. No llegan audios.';return;}
+    const age=state.last_capture_at?Date.now()-new Date(state.last_capture_at).getTime():Infinity;
+    el('mvp-status').textContent=age>20000?'Escucha activada, pero no llegan audios nuevos. Revisa el TP-Link y la conexión del ESP32.':'Escucha activa · llega un audio de 3 segundos cada 5 segundos.';
+  }else if(mvpListening===false){el('mvp-status').textContent='Escucha detenida. Pulsa «Activar escucha» para comenzar.';}
+}
+async function setupMvp(forceProbe=false){
   if(!['127.0.0.1','localhost','[::1]'].includes(location.hostname))return;
-  try{const state=await api('/api/mvp/status');mvpAvailable=true;el('mvp').hidden=false;el('mvp-device').textContent=state.ports.length?'ESP32 · USB':'Conecta el ESP32';el('mvp-network').textContent='IP de la Mac: '+(state.ip||'sin conexión');}catch(e){el('error').textContent=e.message}
+  const probe=forceProbe||Date.now()-lastMvpProbe>15000;
+  if(probe)lastMvpProbe=Date.now();
+  try{const state=await api('/api/mvp/status'+(probe?'?probe=true':''));mvpAvailable=true;el('mvp').hidden=false;el('mvp-device').textContent=state.ports.length?'ESP32 · USB':'Conecta el ESP32';el('mvp-network').textContent='IP de la Mac: '+(state.ip||'sin conexión');showListeningState(state);}catch(e){el('error').textContent=e.message}
 }
 function renderCapture(){
   const captures=data.captures||[];
@@ -116,7 +132,7 @@ async function mvpAction(action){
   if(mvpBusy)return;
   mvpBusy=true;watchedCapture=null;el('mvp-status').textContent=action==='test'?'Comprobando conexión. Después sonará la motosierra…':action==='capture'?'Comprobando conexión y grabando…':'Aplicando cambio…';
   el('mvp').querySelectorAll('button').forEach(b=>b.disabled=true);
-  try{const result=await api('/api/mvp/action','POST',{action});watchedCapture=result.capture_id||null;el('mvp-status').textContent=conciseStatus(result.message);await refresh();}catch(e){el('mvp-status').textContent=conciseStatus(e.message);}finally{mvpBusy=false;el('mvp').querySelectorAll('button').forEach(b=>b.disabled=false);}
+  try{const result=await api('/api/mvp/action','POST',{action});watchedCapture=result.capture_id||null;if(action==='start'||action==='stop')mvpListening=action==='start';el('mvp-start').hidden=mvpListening===true;el('mvp-stop').hidden=mvpListening!==true;el('mvp-status').textContent=conciseStatus(result.message);await refresh();}catch(e){el('mvp-status').textContent=conciseStatus(e.message);}finally{mvpBusy=false;el('mvp').querySelectorAll('button').forEach(b=>b.disabled=false);}
 }
 for(const action of ['test','capture','start','stop'])el('mvp-'+action).onclick=()=>mvpAction(action);
 el('mvp-config').onsubmit=async e=>{
