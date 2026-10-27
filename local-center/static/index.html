@@ -115,7 +115,8 @@ function renderCapture(){
   let result=c.analysis_status==='complete'?(c.detections?'Sonido detectado. Revisa las incidencias.':'Sin sonido de riesgo detectado.'):(c.analysis_error||'Analizando audio…');
   if(c.analysis_summary?.persistent)result='Motosierra detectada · Incidencia registrada.';
   const info=c.analysis_summary;
-  el('mvp-result').innerHTML='<p class="capture-time">Última captura · '+escape(inLima(c.created_at))+'</p><p class="result-text">'+escape(result)+'</p>';
+  const historical=Date.now()-new Date(c.created_at).getTime()>20000;
+  el('mvp-result').innerHTML='<p class="capture-time">'+(historical?'Último audio recibido (histórico)':'Último audio recibido')+' · '+escape(inLima(c.created_at))+'</p><p class="result-text">'+escape(result)+'</p>';
   el('capture-details').hidden=false;
   el('mvp-scores').textContent=info?'Sonido principal: '+(info.top[0]?.label||'—')+' · Motosierra: '+info.chainsaw_score.toFixed(3)+' / umbral '+info.threshold.toFixed(2)+'. Puntaje del modelo; no es una probabilidad.':'';
   if(captureAudioId!==c.id){captureAudioId=c.id;el('mvp-evidence').hidden=true;void fetch('/api/evidence?path='+encodeURIComponent(c.path),{headers:{Authorization:'Bearer '+token}}).then(async r=>{if(!r.ok)return;const blob=await r.blob();if(captureAudioId!==c.id)return;if(captureAudioURL)URL.revokeObjectURL(captureAudioURL);captureAudioURL=URL.createObjectURL(blob);el('mvp-evidence').src=captureAudioURL;el('mvp-evidence').hidden=false;}).catch(()=>{});}
