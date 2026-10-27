@@ -40,6 +40,16 @@ La API no realiza inferencia: recibe resultados del centro local. Ambient se alm
 - `POST /api/events` también admite `source:demo` exclusivamente con sesión operador y nodo DEMO-01, para reintentos con UUID estable. Tokens de dispositivo no autorizan demo.
 - `POST /api/demo` `{scenario:"chainsaw"|"combined"|"ambient"}`: sesión operador; fuente demo explícita.
 
+### Contexto revisado del sensor (Atomic Memory, opcional)
+
+Solo operador. El sensor se toma del incidente guardado en Supabase; el navegador no puede elegirlo. Sin `ATOMICMEMORY_API_URL` y `ATOMICMEMORY_API_KEY` la función queda desactivada (`{enabled:false}`) y no se llama al proveedor.
+
+- `GET /api/incidents/:id/context`: busca hasta 5 notas del sensor del incidente (`POST /v1/memories/search/fast`, `user_id = bosque-escucha:nodo:<node_id>`).
+- `POST /api/incidents/:id/context` `{note, replaces?}`: guarda una nota de 3 a 500 caracteres (`POST /v1/memories/ingest/quick`, `skip_extraction:true`). Con `replaces`, guarda la corrección y después elimina la versión anterior; `replaced:false` indica que la anterior sigue guardada. `saved:true` solo cuando Atomic Memory devuelve el identificador guardado.
+- `DELETE /api/incidents/:id/context` `{memory_id}`: elimina la nota (`DELETE /v1/memories/:id?user_id=...`). 404 si no pertenece a ese sensor.
+
+Cada llamada tiene un límite de 4 segundos y 64 KB de respuesta. Las notas son referencia para el equipo: no modifican prioridad, estado, notificaciones ni evidencia.
+
 ## Contactos y notificaciones
 
 `GET /api/contacts` lista contactos. `POST /api/contacts` crea/actualiza `{id?,name,sector,destination,channel,enabled}`. `destination` E.164 (`+519...`), channel `whatsapp|sms`. El sector coincide exactamente con el nodo; se elige el primer contacto habilitado del sector.
